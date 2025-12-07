@@ -2,6 +2,44 @@
 
 A refactored Svelte application for visualizing sparse matrix multiplication with dependency tracking via a graph-based system.
 
+```mermaid
+flowchart LR
+  subgraph UI[UI Layer]
+    App[App.svelte]
+    MV[MatrixView/MatrixCell]
+    CSR[CSRView/CSRValue]
+    PyView[PythonMatrixView]
+    Picker[ColorPicker]
+  end
+
+  subgraph State[State]
+    Stores[stores.js\nrows/cols/symmetric/mirrorS\ngraph/highlightedElements\npythonMatrix]
+  end
+
+  subgraph Graph[Dependency Graph]
+    DG[dependencyGraph.js\nDependencyGraph
+    addDependency/getAllDependencies
+    CSR with element IDs]
+  end
+
+  subgraph Editor[Python Editor]
+    CM[PythonCodeEditor\nCodeMirror 6 + Python]
+    PySvc[pythonService.js\nPyodide runtime\nTrackedMatrix/TrackedScalar]
+  end
+
+  App --> Stores
+  MV --> Stores
+  CSR --> Stores
+  PyView --> Stores
+  Picker --> Stores
+  Stores --> DG
+  DG --> Stores
+  App --> CM
+  CM --> PySvc
+  PySvc --> Stores
+  PySvc --> PyView
+```
+
 ## Architecture Overview
 
 This application has been completely refactored from a single HTML file into a modular Svelte project with a sophisticated dependency graph system.
@@ -31,6 +69,13 @@ src/
 ```
 
 ## Core Systems
+
+### Python Runtime & Editor
+
+- **Pyodide backend**: `pythonService.js` loads Pyodide, defines `TrackedMatrix`, `TrackedScalar`, and captures stdout/stderr.
+- **TrackedScalar**: wraps scalars with dependency pairs (`left/right` sources) so manual algorithms using `K[i][j]` remain tracked.
+- **TrackedMatrix.from_nested**: converts list-of-lists (numbers or tracked scalars) to a tracked matrix, so custom algorithms that build `O_py` manually still display correctly.
+- **CodeMirror 6 editor**: `PythonCodeEditor.svelte` with Python highlighting, autocomplete for matrix symbols, error-line parsing, and hover tooltips.
 
 ### 1. Dependency Graph (`dependencyGraph.js`)
 
@@ -68,6 +113,10 @@ Svelte stores provide reactive state:
 - Displays Compressed Sparse Row representation
 - Each value element linked to graph node
 - Synchronized highlighting with matrix views
+
+#### PythonMatrixView
+- Renders the Python-computed `O_py` matrix returned from Pyodide
+- Hover shows dependency highlights derived from `TrackedMatrix` dependencies
 
 #### ColorPicker
 - Preset color palette
@@ -149,6 +198,9 @@ npm install
 
 # Development server
 npm run dev
+
+# Tests (unit)
+npm run test
 
 # Build for production
 npm run build

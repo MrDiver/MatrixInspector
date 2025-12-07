@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { initPyodide, executePython, isPyodideReady } from './pythonService';
   import { graph, rows, cols } from './stores';
+  import PythonCodeEditor from './PythonCodeEditor.svelte';
 
   /** @type {import('./dependencyGraph').DependencyGraph | null} */
   let typedGraph = null;
@@ -24,6 +25,7 @@ O_py  # Return the result
   let error = '';
   let stdoutLog = '';
   let stderrLog = '';
+  let errorLines = [];
   let isLoading = false;
   let pyodideReady = false;
   
@@ -69,6 +71,7 @@ O_py  # Return the result
     error = '';
     stdoutLog = '';
     stderrLog = '';
+    errorLines = [];
     pythonResult = null;
     
     try {
@@ -83,10 +86,14 @@ O_py  # Return the result
         pythonResult = result.O_py;
         stdoutLog = result.stdout || '';
         stderrLog = result.stderr || '';
+        errorLines = [];
       } else {
         error = result.error;
         stdoutLog = result.stdout || '';
         stderrLog = result.stderr || '';
+        // Parse stderr for error lines
+        const stderrLines = (result.stderr || '').split('\n');
+        errorLines = stderrLines.filter(line => line.trim().length > 0);
       }
     } catch (err) {
       error = err.message;
@@ -157,6 +164,7 @@ O_py  # Return the result
     error = '';
     stdoutLog = '';
     stderrLog = '';
+    errorLines = [];
     pythonResult = null;
   }
 
@@ -199,12 +207,7 @@ O_py  # Return the result
 
         <div class="editor-body">
           <div class="section-label">Python Code</div>
-          <textarea 
-            bind:value={code} 
-            class="code-editor"
-            placeholder="Write your Python code here..."
-            spellcheck="false"
-          ></textarea>
+          <PythonCodeEditor bind:code {errorLines} />
           <div class="help-text">
             💡 Available: <code>S_left</code>, <code>K</code>, <code>S_right</code> (TrackedMatrix objects)
             <br>
@@ -545,26 +548,6 @@ O_py  # Return the result
 
   .section-label.inline {
     margin: 0;
-  }
-
-  .code-editor {
-    flex: 1;
-    width: 100%;
-    min-height: 200px;
-    padding: 12px;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    resize: none;
-    background: #f9fafb;
-  }
-
-  .code-editor:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
   }
 
   .help-text {
