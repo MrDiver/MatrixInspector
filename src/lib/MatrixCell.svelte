@@ -41,7 +41,7 @@
 
   function handleTouchEnd() {
     isTouching = false;
-    setTimeout(() => clearHighlights(), 200);
+    clearHighlights();
   }
   
   // Get colors for mini blocks
@@ -125,12 +125,12 @@
   
   /* Dim non-highlighted cells when any cell is highlighted */
   :global(body:has(.highlight)) td:not(.highlight) {
-    background: rgba(0, 0, 0, 0.15) !important;
-    transition: background 0.3s ease;
+    opacity: 0.35;
+    transition: opacity 0.3s ease;
   }
   
   :global(body:not(:has(.highlight))) td {
-    transition: background 0.3s ease;
+    transition: opacity 0.3s ease;
   }
 
   td.paintable {
