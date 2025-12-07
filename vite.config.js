@@ -16,8 +16,8 @@ export default defineConfig({
         theme_color: '#1a1a1a',
         background_color: '#ffffff',
         display: 'standalone',
-        scope: './',
-        start_url: './',
+        scope: '/MatrixInspector/',
+        start_url: '/MatrixInspector/',
         icons: [
           {
             src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="%231a1a1a" width="192" height="192"/><text x="50%" y="50%" font-size="80" fill="white" text-anchor="middle" dy=".3em" font-weight="bold">M</text></svg>',
