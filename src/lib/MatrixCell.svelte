@@ -61,6 +61,7 @@
 <td
   class:paintable
   class:highlight={isHighlighted}
+  class:miniblocks={showMiniBlocks && hasValue}
   data-id={element.id}
   on:click={handleClick}
   on:mouseover={handleMouseOver}
@@ -106,6 +107,10 @@
   :global(html.dark) td {
     background: #1a1a1a;
     box-shadow: none;
+  }
+
+  :global(html.dark) td.miniblocks {
+    background: #2a2a2a !important;
   }
   
   
