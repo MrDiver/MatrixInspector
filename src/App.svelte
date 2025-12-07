@@ -3,7 +3,17 @@
   import MatrixView from './lib/MatrixView.svelte';
   import CSRView from './lib/CSRView.svelte';
   import ColorPicker from './lib/ColorPicker.svelte';
-  import { rows, cols, symmetric, mirrorS, initializeMatrices, generateRandomMatrix, currentColor, syncSLeftToSRight, fillDiagonal } from './lib/stores';
+  import Notification from './lib/Notification.svelte';
+  import { rows, cols, symmetric, mirrorS, initializeMatrices, generateRandomMatrix, currentColor, syncSLeftToSRight, fillDiagonal, transposeState } from './lib/stores';
+    import { get } from 'svelte/store';
+    // Transpose state for each matrix
+    $: transpose = $transposeState;
+
+    function toggleTranspose(matrix) {
+      transposeState.update(state => ({ ...state, [matrix]: !state[matrix] }));
+    }
+
+  let notificationComponent;
   
   let rowsValue = 5;
   let colsValue = 5;
@@ -88,21 +98,15 @@
   }
   
   async function captureMatrixScreenshot() {
-    const workspace = document.querySelector('.workspace');
-    if (!workspace) return;
-    
+    const area = document.getElementById('screenshot-area');
+    if (!area) return;
     try {
-      // Dynamically import html2canvas
       const { default: html2canvas } = await import('html2canvas');
-      
-      // @ts-ignore - workspace is an HTMLElement
-      const canvas = await html2canvas(workspace, {
+      const canvas = await html2canvas(area, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false
       });
-      
-      // Convert to blob and download
       canvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -110,10 +114,41 @@
         link.href = url;
         link.click();
         URL.revokeObjectURL(url);
+        notificationComponent.show('Screenshot downloaded!', 'success');
       });
     } catch (error) {
       console.error('Screenshot failed:', error);
-      alert('Screenshot failed. Please try again.');
+      notificationComponent.show('Screenshot failed. Please try again.', 'error');
+    }
+  }
+
+  async function copyMatrixScreenshot() {
+    const area = document.getElementById('screenshot-area');
+    if (!area) return;
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(area, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false
+      });
+      if (navigator.clipboard && window.ClipboardItem) {
+        canvas.toBlob(async (blob) => {
+          try {
+            await navigator.clipboard.write([
+              new window.ClipboardItem({ 'image/png': blob })
+            ]);
+            notificationComponent.show('Screenshot copied to clipboard!', 'success');
+          } catch (err) {
+            notificationComponent.show('Copy to clipboard failed.', 'error');
+          }
+        });
+      } else {
+        notificationComponent.show('Clipboard API not supported.', 'error');
+      }
+    } catch (error) {
+      console.error('Screenshot failed:', error);
+      notificationComponent.show('Screenshot failed. Please try again.', 'error');
     }
   }
 </script>
@@ -138,6 +173,12 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </button>
+      <button on:click={copyMatrixScreenshot} class="icon-btn" title="Copy Screenshot">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2"/>
+          <rect x="3" y="3" width="13" height="13" rx="2"/>
         </svg>
       </button>
       <button on:click={() => showCSR = !showCSR} class="icon-btn" title="Toggle CSR View">
@@ -222,44 +263,63 @@
     </div>
   </div>
   
+  
   <div class="workspace">
-    <div class="matrix-col">
-      <MatrixView
-        matrixName="S_left"
-        label="S (Left)"
-        paintable={true}
-      />
-    </div>
-    
-    <div class="matrix-col">
-      <MatrixView
-        matrixName="K"
-        label="K"
-        paintable={true}
-      />
-      <div style="margin-top: 10px;">
-        <MatrixView
-          matrixName="KS"
-          label="KS (Intermediate)"
-          showMiniBlocks={true}
-          grayBackground={true}
-        />
+    <div class="screenshot-area" id="screenshot-area">
+      <div class="matrix-col">
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <MatrixView
+            matrixName="S_left"
+            label="S (Left)"
+            paintable={true}
+          />
+          <button class="transpose-btn" on:click={() => toggleTranspose('S_left')} title="Transpose S_left">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
+            {transpose.S_left ? 'Untranspose' : 'Transpose'}
+          </button>
+        </div>
       </div>
-    </div>
-    
-    <div class="matrix-col">
-      <MatrixView
-        matrixName="S_right"
-        label="S (Right)"
-        paintable={!mirrorSValue}
-      />
-      <div style="margin-top: 10px;">
-        <MatrixView
-          matrixName="O"
-          label="O = S_left · K · S_right"
-          showMiniBlocks={true}
-          grayBackground={true}
-        />
+      <div class="matrix-col">
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <MatrixView
+            matrixName="K"
+            label="K"
+            paintable={true}
+          />
+          <button class="transpose-btn" on:click={() => toggleTranspose('K')} title="Transpose K">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
+            {transpose.K ? 'Untranspose' : 'Transpose'}
+          </button>
+        </div>
+        <div style="margin-top: 10px;">
+          <MatrixView
+            matrixName="KS"
+            label="KS (Intermediate)"
+            showMiniBlocks={true}
+            grayBackground={true}
+          />
+        </div>
+      </div>
+      <div class="matrix-col">
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <MatrixView
+            matrixName="S_right"
+            label="S (Right)"
+            paintable={!mirrorSValue}
+          />
+          <button class="transpose-btn" on:click={() => toggleTranspose('S_right')} title="Transpose S_right">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
+            {transpose.S_right ? 'Untranspose' : 'Transpose'}
+          </button>
+        </div>
+        <div style="margin-top: 10px;">
+          <MatrixView
+            matrixName="O"
+            label="O = S_left · K · S_right"
+            showMiniBlocks={true}
+            grayBackground={true}
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -272,6 +332,8 @@
       <CSRView matrixName="O" label="O" />
     </div>
   {/if}
+
+  <Notification bind:this={notificationComponent} />
 </main>
 
 <style>
@@ -310,22 +372,10 @@
     gap: 12px;
   }
 
-  h1 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.5px;
-  }
-
-  .subtitle {
-    font-size: 13px;
-    opacity: 0.9;
-    margin-left: 44px;
-  }
-
   .header-actions {
     display: flex;
-    gap: 8px;
+    gap: 12px;
+    align-items: center;
   }
 
   .icon-btn {
@@ -333,8 +383,8 @@
     background: rgba(255, 255, 255, 0.15);
     border: none;
     border-radius: 6px;
-    color: white;
     cursor: pointer;
+    color: white;
     transition: background 0.2s;
     display: flex;
     align-items: center;
@@ -343,6 +393,27 @@
 
   .icon-btn:hover {
     background: rgba(255, 255, 255, 0.25);
+  }
+
+  button.transpose-btn {
+    margin-top: 6px;
+    padding: 4px 10px;
+    background: #e8eaf6;
+    color: #2841a0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+
+  button.transpose-btn:hover {
+    background: #c5cae9;
+    color: #1a237e;
   }
 
   .toolbar {
@@ -467,12 +538,21 @@
   
   .workspace {
     display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex: 1;
+    background: none;
+    padding: 0;
+  }
+
+  .screenshot-area {
+    display: flex;
     gap: 32px;
     align-items: flex-start;
-    padding: 32px 24px;
-    flex-wrap: wrap;
-    justify-content: center;
-    flex: 1;
+    padding: 24px 24px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
   }
   
   .matrix-col {

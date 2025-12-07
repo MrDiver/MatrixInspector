@@ -1,3 +1,10 @@
+// Transpose state for each matrix
+export const transposeState = writable({
+  S_left: false,
+  S_right: false,
+  K: false
+});
+
 /**
  * Svelte stores for matrix inspector state
  */
@@ -292,13 +299,16 @@ export function clearHighlights() {
  * Get matrix as 2D array for rendering
  */
 export function getMatrixData(matrixName) {
-  return derived(graph, $graph => {
+  return derived([graph, transposeState], ([$graph, $transposeState]) => {
     const matrixIds = $graph.matrices[matrixName];
     if (!matrixIds) return [];
-    
-    return matrixIds.map(row =>
-      row.map(id => $graph.getNode(id))
-    );
+
+    let data = matrixIds.map(row => row.map(id => $graph.getNode(id)));
+    if ($transposeState[matrixName]) {
+      // Transpose the 2D array
+      data = data[0].map((_, colIndex) => data.map(row => row[colIndex]));
+    }
+    return data;
   });
 }
 
