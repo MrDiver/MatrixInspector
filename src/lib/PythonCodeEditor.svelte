@@ -195,11 +195,20 @@
   :global(.cm-gutters) {
     background: var(--bg-tertiary);
     border-right: 1px solid var(--border-color);
+    color: var(--text-secondary);
   }
 
   :global(.cm-activeLineGutter) {
     background: var(--bg-primary);
     color: var(--text-primary);
+  }
+
+  :global(.cm-cursor) {
+    border-left-color: var(--text-primary);
+  }
+
+  :global(.cm-selectionBackground) {
+    background: rgba(102, 126, 234, 0.2);
   }
 
   :global(.cm-error-line) {
@@ -226,6 +235,51 @@
 
   :global(.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]) {
     background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  /* Syntax highlighting */
+  :global(.cm-atom) {
+    color: #a8edea;
+  }
+
+  :global(.cm-number) {
+    color: #ffeaa7;
+  }
+
+  :global(.cm-string) {
+    color: #43e97b;
+  }
+
+  :global(.cm-comment) {
+    color: var(--text-secondary);
+  }
+
+  :global(.cm-keyword) {
+    color: #f093fb;
+  }
+
+  :global(.cm-variable) {
+    color: var(--text-primary);
+  }
+
+  :global(.cm-property) {
+    color: #4facfe;
+  }
+
+  :global(.cm-operator) {
+    color: #fa709a;
+  }
+
+  :global(.cm-function) {
+    color: #667eea;
+  }
+
+  :global(.cm-bracket) {
+    color: var(--text-secondary);
+  }
+
+  :global(html.dark .cm-line) {
     color: var(--text-primary);
   }
 
