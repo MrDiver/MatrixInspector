@@ -102,6 +102,11 @@
     --mini-offset: calc(var(--cell-size, 32px) * 0.06);
     touch-action: manipulation;
   }
+
+  :global(html.dark) td {
+    background: #1a1a1a;
+    box-shadow: none;
+  }
   
   td.paintable {
     cursor: pointer;
@@ -114,6 +119,10 @@
     z-index: 10;
   }
 
+  :global(html.dark) td.paintable:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
   @media (hover: none) {
     /* Touch devices - reduce transform to avoid jank */
     td.paintable:active {
@@ -121,6 +130,10 @@
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1),
                   inset 0 0 0 1px rgba(0, 0, 0, 0.08);
       z-index: 10;
+    }
+
+    :global(html.dark) td.paintable:active {
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     }
   }
   
@@ -132,9 +145,9 @@
   }
 
   :global(html.dark) td.highlight {
-    box-shadow: 0 0 0 3px #ff6666,
-                0 0 12px rgba(255, 102, 102, 0.55);
-    background: #331111;
+    box-shadow: 0 0 0 3px #ff5555,
+                0 0 12px rgba(255, 85, 85, 0.6);
+    background: #3a1a1a;
   }
   
   .mini {
@@ -144,5 +157,9 @@
     border: max(0.5px, calc(var(--cell-size, 32px) * 0.03)) solid rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
     border-radius: 1px;
+  }
+
+  :global(html.dark) .mini {
+    border-color: rgba(255, 255, 255, 0.25);
   }
 </style>

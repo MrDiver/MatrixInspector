@@ -35,18 +35,18 @@
 }
 
 html.dark {
-  /* Dark theme colors */
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #0f0f0f;
-  --bg-tertiary: #2a2a2a;
-  --text-primary: #e5e7eb;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #d1d5db;
-  --border-color: #3a3a3a;
-  --header-gradient: linear-gradient(135deg, #4c3a77 0%, #5a3d8a 100%);
-  --button-hover-bg: rgba(255, 255, 255, 0.15);
-  --button-active-bg: rgba(255, 255, 255, 0.2);
-  --input-focus-shadow: rgba(67, 99, 216, 0.2);
+  /* Dark theme colors - with increased contrast */
+  --bg-primary: #121212;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #1e1e1e;
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #e0e0e0;
+  --border-color: #404040;
+  --header-gradient: linear-gradient(135deg, #5a4a8a 0%, #6a4d9a 100%);
+  --button-hover-bg: rgba(255, 255, 255, 0.18);
+  --button-active-bg: rgba(255, 255, 255, 0.25);
+  --input-focus-shadow: rgba(67, 99, 216, 0.25);
   
   color-scheme: dark;
 }
