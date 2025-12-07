@@ -25,24 +25,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: yarn
-          cache-dependency-path: matrix-inspector-svelte/yarn.lock
-
-      - name: Cache node modules & yarn
-        uses: actions/cache@v4
-        with:
-          path: |
-            matrix-inspector-svelte/node_modules
-            ~/.cache/yarn
-            ~/.npm
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          cache: npm
+          cache-dependency-path: matrix-inspector-svelte/package-lock.json
 
       - name: Install
-        run: yarn install
+        run: npm ci
         working-directory: matrix-inspector-svelte
 
       - name: Build
-        run: yarn build
+        run: npm run build
         working-directory: matrix-inspector-svelte
 
       - name: Add SPA fallback
