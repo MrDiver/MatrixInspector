@@ -19,13 +19,23 @@
   
   function handleMouseOver() {
     if (hasValue && !isTouching) {
+      // Cancel any pending clear to prevent flicker
+      if (clearTimer) {
+        clearTimeout(clearTimer);
+        clearTimer = null;
+      }
       highlightElement(element.id);
     }
   }
   
+  let clearTimer;
+  
   function handleMouseLeave() {
     if (!isTouching) {
-      clearHighlights();
+      // Delay clearing highlights to prevent flicker when moving between cells
+      clearTimer = setTimeout(() => {
+        clearHighlights();
+      }, 50);
     }
   }
 
@@ -62,6 +72,7 @@
   class:paintable
   class:highlight={isHighlighted}
   class:miniblocks={showMiniBlocks && hasValue}
+  data-has-value={hasValue}
   data-id={element.id}
   on:click={handleClick}
   on:mouseover={handleMouseOver}
@@ -70,9 +81,10 @@
   on:touchend={handleTouchEnd}
   on:focus={handleMouseOver}
   on:blur={handleMouseLeave}
-  style:background={hasValue
-    ? (showMiniBlocks ? 'var(--matrix-cell-filled-bg)' : (element.color || 'var(--color-primary)'))
-    : ''}
+  style:--cell-base={hasValue
+    ? (showMiniBlocks ? 'var(--matrix-cell-bg)' : (element.color || 'var(--color-primary)'))
+    : 'var(--matrix-cell-bg)'}
+  style:--cell-highlight={hasValue ? (element.color || 'var(--color-primary)') : 'var(--color-rose)'}
   role={paintable ? 'button' : 'cell'}
   tabindex={paintable ? 0 : -1}
 >
@@ -97,7 +109,9 @@
     transition: transform 0.08s ease, box-shadow 0.08s ease, outline-color 0.08s ease;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
     border-radius: 6px;
-    background: var(--matrix-cell-bg);
+    background: var(--cell-base, var(--matrix-cell-bg));
+    opacity: 1;
+    transition: transform 0.08s ease, box-shadow 0.3s ease, outline-color 0.08s ease, opacity 0.15s ease, background 0.3s ease;
     --mini-size: calc(var(--cell-size, 32px) * 0.22);
     --mini-step: calc(var(--cell-size, 32px) * 0.25);
     --mini-offset: calc(var(--cell-size, 32px) * 0.06);
@@ -105,15 +119,30 @@
   }
 
   :global(html.dark) td {
-    background: var(--matrix-cell-bg);
+    background: var(--cell-base, var(--matrix-cell-bg));
     box-shadow: none;
   }
 
+  /* Miniblock matrices should stay neutral (no per-cell colors) */
+  :global(td.miniblocks) {
+    background: var(--matrix-cell-bg) !important;
+  }
+
   :global(html.dark) td.miniblocks {
-    background: var(--matrix-cell-filled-bg) !important;
+    background: var(--matrix-cell-bg) !important;
   }
   
   
+  /* Dim non-highlighted cells when any cell is highlighted */
+  :global(body:has(.highlight)) td:not(.highlight) {
+    opacity: 0.35;
+    transition: opacity 0.3s ease;
+  }
+  
+  :global(body:not(:has(.highlight))) td {
+    transition: opacity 0.3s ease;
+  }
+
   td.paintable {
     cursor: pointer;
   }
@@ -144,16 +173,25 @@
   }
   
   td.highlight {
-    box-shadow: 0 0 0 3px var(--color-rose),
-                0 0 12px color-mix(in srgb, var(--color-rose) 70%, transparent);
-    background: color-mix(in srgb, var(--color-rose) 18%, var(--bg-primary));
+    opacity: 1 !important;
+    box-shadow: inset 0 0 0 3px var(--cell-highlight),
+                0 0 12px color-mix(in srgb, var(--cell-highlight) 70%, transparent);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--cell-highlight) 85%, var(--bg-primary) 15%),
+      color-mix(in srgb, var(--cell-highlight) 60%, black 40%)
+    );
     z-index: 6;
   }
 
   :global(html.dark) td.highlight {
-    box-shadow: 0 0 0 3px var(--color-rose),
-                0 0 12px color-mix(in srgb, var(--color-rose) 75%, transparent);
-    background: color-mix(in srgb, var(--color-rose) 20%, var(--bg-primary));
+    box-shadow: inset 0 0 0 3px var(--cell-highlight),
+                0 0 12px color-mix(in srgb, var(--cell-highlight) 75%, transparent);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--cell-highlight) 82%, var(--bg-primary) 18%),
+      color-mix(in srgb, var(--cell-highlight) 55%, black 45%)
+    );
   }
   
   .mini {

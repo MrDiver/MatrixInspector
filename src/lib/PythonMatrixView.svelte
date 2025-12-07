@@ -156,18 +156,22 @@
     padding: 4px;
   }
 
-  .python-matrix.graybg :global(td) {
+  .python-matrix.graybg :global(td:not(.has-value)) {
     background: var(--matrix-cell-bg);
   }
 
-  .python-matrix.graybg :global(td:hover) {
+  .python-matrix.graybg :global(td:not(.has-value):hover) {
     background: var(--matrix-cell-hover-bg);
   }
   
   .cell {
     width: var(--cell-size);
     height: var(--cell-size);
-    background: var(--matrix-cell-bg);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--matrix-cell-bg) 80%, white 20%),
+      color-mix(in srgb, var(--matrix-cell-bg) 65%, var(--color-cyan) 20%, white 15%)
+    );
     border: none;
     position: relative;
     transition: transform 0.08s ease, box-shadow 0.08s ease, outline-color 0.08s ease;
@@ -177,7 +181,8 @@
   }
   
   .cell.has-value {
-    background: var(--matrix-cell-filled-bg);
+    /* Python matrix cells should stay neutral (no per-cell colors/gradients) */
+    background: var(--matrix-cell-bg);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
   }
   

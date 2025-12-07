@@ -117,19 +117,19 @@
     padding: 4px;
   }
   
-  table.graybg :global(td:not([style*="background"])) {
+  table.graybg :global(td[data-has-value="false"]:not([style*="background"])) {
     background: var(--matrix-cell-bg);
   }
 
-  :global(html.dark) table.graybg :global(td:not([style*="background"])) {
+  :global(html.dark) table.graybg :global(td[data-has-value="false"]:not([style*="background"])) {
     background: var(--matrix-cell-bg) !important;
   }
   
-  table.graybg :global(td:hover:not([style*="background"])) {
+  table.graybg :global(td[data-has-value="false"]:hover:not([style*="background"])) {
     background: var(--matrix-cell-hover-bg);
   }
 
-  :global(html.dark) table.graybg :global(td:hover:not([style*="background"])) {
+  :global(html.dark) table.graybg :global(td[data-has-value="false"]:hover:not([style*="background"])) {
     background: var(--matrix-cell-hover-bg) !important;
   }
 </style>
