@@ -8,7 +8,8 @@
   import PythonEditor from './lib/PythonEditor.svelte';
   import PythonMatrixView from './lib/PythonMatrixView.svelte';
   import { rows, cols, symmetric, mirrorS, initializeMatrices, generateRandomMatrix, currentColor, syncSLeftToSRight, fillDiagonal, transposeState, pythonMatrix } from './lib/stores';
-    import { get } from 'svelte/store';
+  import { get } from 'svelte/store';
+  import './sw-registration.js';
     // Transpose state for each matrix
     $: transpose = $transposeState;
 

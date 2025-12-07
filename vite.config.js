@@ -7,8 +7,26 @@ export default defineConfig({
   plugins: [
     svelte(),
     VitePWA({
+      strategies: 'generateSW',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt'],
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,wasm}'],
+        // Cache pyodide and html2canvas for offline use
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'cdn-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          }
+        ]
+      },
       manifest: {
         name: 'Matrix Inspector',
         short_name: 'MatrixInsp',
@@ -24,23 +42,6 @@ export default defineConfig({
             sizes: '192x192',
             type: 'image/svg+xml',
             purpose: 'any'
-          }
-        ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,wasm}'],
-        // Cache pyodide and html2canvas for offline use
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'cdn-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              }
-            }
           }
         ]
       }
