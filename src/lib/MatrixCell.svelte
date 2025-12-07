@@ -125,12 +125,12 @@
   
   /* Dim non-highlighted cells when any cell is highlighted */
   :global(body:has(.highlight)) td:not(.highlight) {
-    opacity: 0.35;
-    transition: opacity 0.3s ease;
+    background: rgba(0, 0, 0, 0.15) !important;
+    transition: background 0.3s ease;
   }
   
   :global(body:not(:has(.highlight))) td {
-    transition: opacity 0.3s ease;
+    transition: background 0.3s ease;
   }
 
   td.paintable {
