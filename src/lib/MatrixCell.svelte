@@ -9,6 +9,8 @@
   $: isHighlighted = $highlightedElements.has(element.id);
   $: hasValue = element.value !== 0;
   
+  let isTouching = false;
+  
   function handleClick() {
     if (paintable && onPaint) {
       onPaint(element.row, element.col);
@@ -16,13 +18,30 @@
   }
   
   function handleMouseOver() {
-    if (hasValue) {
+    if (hasValue && !isTouching) {
       highlightElement(element.id);
     }
   }
   
   function handleMouseLeave() {
-    clearHighlights();
+    if (!isTouching) {
+      clearHighlights();
+    }
+  }
+
+  function handleTouchStart() {
+    isTouching = true;
+    if (paintable && onPaint) {
+      onPaint(element.row, element.col);
+    }
+    if (hasValue) {
+      highlightElement(element.id);
+    }
+  }
+
+  function handleTouchEnd() {
+    isTouching = false;
+    setTimeout(() => clearHighlights(), 200);
   }
   
   // Get colors for mini blocks
@@ -46,6 +65,8 @@
   on:click={handleClick}
   on:mouseover={handleMouseOver}
   on:mouseleave={handleMouseLeave}
+  on:touchstart={handleTouchStart}
+  on:touchend={handleTouchEnd}
   on:focus={handleMouseOver}
   on:blur={handleMouseLeave}
   style:background={hasValue
@@ -75,10 +96,11 @@
     transition: transform 0.08s ease, box-shadow 0.08s ease, outline-color 0.08s ease;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
     border-radius: 6px;
-    background: #fcfcfc;
+    background: var(--bg-tertiary, #fcfcfc);
     --mini-size: calc(var(--cell-size, 32px) * 0.22);
     --mini-step: calc(var(--cell-size, 32px) * 0.25);
     --mini-offset: calc(var(--cell-size, 32px) * 0.06);
+    touch-action: manipulation;
   }
   
   td.paintable {
@@ -91,12 +113,28 @@
                 inset 0 0 0 1px rgba(0, 0, 0, 0.08);
     z-index: 10;
   }
+
+  @media (hover: none) {
+    /* Touch devices - reduce transform to avoid jank */
+    td.paintable:active {
+      transform: scale(0.98);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1),
+                  inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+      z-index: 10;
+    }
+  }
   
   td.highlight {
     box-shadow: 0 0 0 3px #ff3333,
                 0 0 12px rgba(255, 51, 51, 0.55);
     background: #fff2f2;
     z-index: 6;
+  }
+
+  :global(html.dark) td.highlight {
+    box-shadow: 0 0 0 3px #ff6666,
+                0 0 12px rgba(255, 102, 102, 0.55);
+    background: #331111;
   }
   
   .mini {

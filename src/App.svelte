@@ -8,6 +8,7 @@
   import PythonEditor from './lib/PythonEditor.svelte';
   import PythonMatrixView from './lib/PythonMatrixView.svelte';
   import { rows, cols, symmetric, mirrorS, initializeMatrices, generateRandomMatrix, currentColor, syncSLeftToSRight, fillDiagonal, transposeState, pythonMatrix } from './lib/stores';
+  import { darkMode } from './lib/themeStore';
   import { get } from 'svelte/store';
   import './sw-registration.js';
     // Transpose state for each matrix
@@ -198,6 +199,25 @@
           <rect x="14" y="14" width="7" height="7"/>
         </svg>
       </button>
+      <button on:click={() => darkMode.update(d => !d)} class="icon-btn" title="Toggle Dark Mode">
+        {#if $darkMode}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        {:else}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        {/if}
+      </button>
       <button on:click={() => pythonEditorOpen = !pythonEditorOpen} class="icon-btn" class:active={pythonEditorOpen} title="Python Editor (Ctrl+P)">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9.5 2c-1.82 0-3.53.5-5 1.35C2.99 4.34 2 6.05 2 8c0 .83.09 1.64.26 2.4L2 20h6l.74-10h6.52L16 20h6l-.26-9.6c.17-.76.26-1.57.26-2.4 0-1.95-.99-3.66-2.5-4.65C18.03 2.5 16.32 2 14.5 2z"/>
@@ -362,7 +382,9 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     margin: 0;
     padding: 0;
-    background: #f5f7fa;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
   main {
@@ -376,15 +398,18 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--header-gradient);
     color: white;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    gap: 16px;
+    flex-wrap: wrap;
   }
 
   .header-left {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    flex-shrink: 0;
   }
 
   .logo {
@@ -393,68 +418,92 @@
     gap: 12px;
   }
 
+  .logo h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+
   .header-actions {
     display: flex;
     gap: 12px;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   .icon-btn {
     padding: 8px;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--button-hover-bg);
     border: none;
     border-radius: 6px;
     cursor: pointer;
     color: white;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.1s;
     display: flex;
     align-items: center;
     justify-content: center;
+    touch-action: manipulation;
   }
 
   :global(.icon-btn.active) {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--button-active-bg);
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
   }
 
   .icon-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--button-active-bg);
+  }
+
+  .icon-btn:active {
+    transform: scale(0.95);
   }
 
   button.transpose-btn {
     margin-top: 6px;
-    padding: 4px 10px;
-    background: #e8eaf6;
-    color: #2841a0;
-    border: none;
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    color: var(--primary-blue);
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    touch-action: manipulation;
   }
 
   button.transpose-btn:hover {
-    background: #c5cae9;
-    color: #1a237e;
+    background: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+  }
+
+  button.transpose-btn:active {
+    transform: scale(0.95);
   }
 
   .toolbar {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 16px 24px;
-    background: white;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 16px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
   }
 
   .toolbar-row {
     display: flex;
-    gap: 24px;
+    gap: 16px;
     align-items: center;
     flex-wrap: wrap;
   }
@@ -463,13 +512,15 @@
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   .section-label {
     font-size: 13px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--text-secondary);
     margin-right: 4px;
+    white-space: nowrap;
   }
 
   .input-group {
@@ -477,11 +528,12 @@
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: #4b5563;
+    color: var(--text-tertiary);
   }
 
   .input-group span {
     font-weight: 500;
+    white-space: nowrap;
   }
 
   .checkbox-label {
@@ -489,35 +541,39 @@
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: #4b5563;
+    color: var(--text-tertiary);
     cursor: pointer;
     user-select: none;
+    white-space: nowrap;
   }
 
   .action-panel {
     display: flex;
-    gap: 24px;
-    padding: 16px 24px;
-    background: white;
-    border-bottom: 1px solid #e5e7eb;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
     flex-wrap: wrap;
+    overflow-x: auto;
   }
 
   .action-group {
     display: flex;
     gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   .group-title {
     font-size: 13px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--text-secondary);
     margin-right: 4px;
+    white-space: nowrap;
   }
 
   .btn {
-    padding: 7px 14px;
+    padding: 8px 14px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -527,39 +583,53 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    touch-action: manipulation;
+    white-space: nowrap;
   }
 
   .btn-primary {
-    background: #4363d8;
+    background: var(--primary-blue);
     color: white;
   }
 
   .btn-primary:hover {
-    background: #3451b8;
+    background: var(--primary-blue-hover);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(67, 99, 216, 0.3);
   }
 
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
   .btn-accent {
-    background: #46f0f0;
+    background: var(--accent-cyan);
     color: #1a202c;
   }
 
   .btn-accent:hover {
-    background: #33e6e6;
+    background: var(--accent-cyan-hover);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(70, 240, 240, 0.3);
   }
 
+  .btn-accent:active {
+    transform: translateY(0);
+  }
+
   .btn-secondary {
-    background: #ef4444;
+    background: var(--danger-red);
     color: white;
   }
 
   .btn-secondary:hover {
-    background: #dc2626;
+    background: var(--danger-red-hover);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  }
+
+  .btn-secondary:active {
+    transform: translateY(0);
   }
   
   .workspace {
@@ -568,31 +638,33 @@
     align-items: flex-start;
     flex: 1;
     background: none;
-    padding: 0;
+    padding: 12px;
+    overflow-x: auto;
   }
 
   .screenshot-area {
     display: flex;
-    gap: 32px;
+    gap: 16px;
     align-items: flex-start;
-    padding: 24px 24px;
+    padding: 16px;
     margin-top: 12px;
-    background: #fff;
+    background: var(--bg-primary);
     border-radius: 16px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    min-width: min-content;
   }
   
   .matrix-grid {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
     width: 100%;
   }
 
   .matrix-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 24px;
+    gap: 16px;
     justify-content: center;
   }
 
@@ -601,26 +673,30 @@
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    min-width: 220px;
+    min-width: 200px;
+    flex-shrink: 0;
   }
 
   
   .csr-panel {
     display: flex;
     flex-direction: row;
-    gap: 24px;
-    padding: 24px;
-    background: white;
-    border-top: 1px solid #e5e7eb;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
     flex-wrap: wrap;
     justify-content: center;
     width: 100%;
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
   }
   
   input[type="number"] {
     padding: 6px 10px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     border-radius: 6px;
     font-size: 13px;
     width: 60px;
@@ -629,14 +705,177 @@
 
   input[type="number"]:focus {
     outline: none;
-    border-color: #4363d8;
-    box-shadow: 0 0 0 3px rgba(67, 99, 216, 0.1);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px var(--input-focus-shadow);
   }
   
   input[type="checkbox"] {
     cursor: pointer;
     width: 16px;
     height: 16px;
-    accent-color: #4363d8;
+    accent-color: var(--primary-blue);
+  }
+
+  /* Mobile responsiveness */
+  @media (max-width: 768px) {
+    .app-header {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 12px 16px;
+      gap: 12px;
+    }
+
+    .header-left {
+      width: 100%;
+    }
+
+    .logo {
+      gap: 10px;
+    }
+
+    .logo h1 {
+      font-size: 18px;
+    }
+
+    .header-actions {
+      width: 100%;
+      justify-content: space-around;
+    }
+
+    .toolbar {
+      padding: 12px;
+      gap: 8px;
+    }
+
+    .toolbar-row {
+      gap: 12px;
+    }
+
+    .toolbar-section {
+      gap: 8px;
+    }
+
+    .action-panel {
+      padding: 12px;
+      gap: 12px;
+    }
+
+    .action-group {
+      gap: 6px;
+    }
+
+    .workspace {
+      padding: 8px;
+    }
+
+    .screenshot-area {
+      padding: 12px;
+      gap: 12px;
+      border-radius: 12px;
+    }
+
+    .matrix-row {
+      gap: 12px;
+    }
+
+    .matrix-cell {
+      gap: 8px;
+      min-width: 160px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .icon-btn {
+      padding: 6px;
+    }
+
+    button.transpose-btn {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .input-group,
+    .checkbox-label {
+      font-size: 12px;
+    }
+
+    input[type="number"] {
+      width: 50px;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .csr-panel {
+      padding: 12px;
+      gap: 12px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .logo h1 {
+      font-size: 16px;
+    }
+
+    .subtitle {
+      font-size: 11px;
+    }
+
+    .header-actions {
+      gap: 8px;
+    }
+
+    .icon-btn {
+      padding: 5px;
+    }
+
+    .section-label,
+    .group-title {
+      font-size: 12px;
+    }
+
+    .toolbar {
+      padding: 8px;
+    }
+
+    .toolbar-row {
+      gap: 8px;
+    }
+
+    .toolbar-section {
+      gap: 6px;
+    }
+
+    .action-panel {
+      padding: 8px;
+      gap: 8px;
+    }
+
+    .matrix-cell {
+      min-width: 140px;
+    }
+
+    .btn {
+      padding: 5px 10px;
+      font-size: 11px;
+    }
+
+    input[type="number"] {
+      width: 45px;
+      padding: 3px 6px;
+      font-size: 11px;
+    }
+
+    .input-group,
+    .checkbox-label {
+      font-size: 11px;
+    }
+
+    button.transpose-btn {
+      padding: 3px 6px;
+      font-size: 10px;
+    }
   }
 </style>

@@ -80,6 +80,7 @@
     font-weight: bold;
     margin-bottom: 8px;
     font-size: 1.1em;
+    color: var(--text-primary);
   }
 
   .csr-title :global(i) {
@@ -93,7 +94,7 @@
     font-weight: 500;
     margin-top: 4px;
     margin-bottom: 4px;
-    color: #555;
+    color: var(--text-secondary);
   }
   
   .csr-list {
@@ -108,6 +109,8 @@
     border-radius: 4px;
     text-align: center;
     min-width: 22px;
-    background: #eee;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
   }
 </style>

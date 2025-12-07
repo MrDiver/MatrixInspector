@@ -201,7 +201,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--header-gradient);
     border: none;
     color: white;
     cursor: pointer;
@@ -210,6 +210,7 @@
     justify-content: center;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     transition: transform 0.2s, box-shadow 0.2s;
+    touch-action: manipulation;
   }
 
   .gallery-toggle:hover {
@@ -217,18 +218,23 @@
     box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
   }
 
+  .gallery-toggle:active {
+    transform: scale(0.95);
+  }
+
   .gallery-panel {
     position: absolute;
     bottom: 64px;
     left: 0;
     width: 280px;
-    background: white;
+    background: var(--bg-primary);
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     max-height: 400px;
     animation: slideUp 0.2s ease-out;
+    border: 1px solid var(--border-color);
   }
 
   @keyframes slideUp {
@@ -244,7 +250,7 @@
 
   .gallery-header {
     padding: 16px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -254,7 +260,7 @@
     margin: 0;
     font-size: 14px;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--text-primary);
   }
 
   .gallery-actions {
@@ -264,25 +270,30 @@
 
   .btn-small {
     padding: 6px;
-    background: #f3f4f6;
+    background: var(--bg-tertiary);
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    color: #6b7280;
-    transition: background 0.2s;
+    color: var(--text-secondary);
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
+    touch-action: manipulation;
   }
 
   .btn-small:hover {
-    background: #e5e7eb;
-    color: #4b5563;
+    background: var(--border-color);
+    color: var(--text-primary);
+  }
+
+  .btn-small:active {
+    transform: scale(0.95);
   }
 
   .save-dialog {
     padding: 12px 16px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -290,15 +301,18 @@
 
   .save-dialog input {
     padding: 8px 10px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     border-radius: 6px;
     font-size: 13px;
+    transition: border-color 0.15s;
   }
 
   .save-dialog input:focus {
     outline: none;
-    border-color: #4363d8;
-    box-shadow: 0 0 0 3px rgba(67, 99, 216, 0.1);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px var(--input-focus-shadow);
   }
 
   .dialog-buttons {
@@ -315,25 +329,36 @@
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    touch-action: manipulation;
   }
 
   .btn-confirm {
-    background: #4363d8;
+    background: var(--primary-blue);
     color: white;
   }
 
   .btn-confirm:hover {
-    background: #3451b8;
+    background: var(--primary-blue-hover);
+  }
+
+  .btn-confirm:active {
+    transform: scale(0.95);
   }
 
   .btn-cancel {
-    background: #e5e7eb;
-    color: #6b7280;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
   }
 
   .btn-cancel:hover {
-    background: #d1d5db;
+    background: var(--border-color);
+    color: var(--text-primary);
+  }
+
+  .btn-cancel:active {
+    transform: scale(0.95);
   }
 
   .gallery-list {
@@ -345,7 +370,7 @@
   .empty-message {
     text-align: center;
     padding: 24px 16px;
-    color: #9ca3af;
+    color: var(--text-secondary);
     font-size: 13px;
   }
 
@@ -355,13 +380,14 @@
     align-items: center;
     padding: 10px;
     border-radius: 6px;
-    background: #f9fafb;
+    background: var(--bg-tertiary);
     margin-bottom: 6px;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
   }
 
   .gallery-item:hover {
-    background: #f3f4f6;
+    background: var(--border-color);
   }
 
   .item-info {
@@ -374,7 +400,7 @@
   .item-name {
     font-size: 13px;
     font-weight: 500;
-    color: #1f2937;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -382,7 +408,7 @@
 
   .item-details {
     font-size: 11px;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .item-actions {
@@ -396,23 +422,32 @@
     padding: 4px 6px;
     border: none;
     border-radius: 4px;
-    background: #e5e7eb;
+    background: var(--bg-secondary);
     cursor: pointer;
-    color: #6b7280;
-    transition: background 0.2s, color 0.2s;
+    color: var(--text-secondary);
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
+    touch-action: manipulation;
   }
 
   .btn-load:hover {
-    background: #4363d8;
+    background: var(--primary-blue);
     color: white;
   }
 
+  .btn-load:active {
+    transform: scale(0.9);
+  }
+
   .btn-delete:hover {
-    background: #ef4444;
+    background: var(--danger-red);
     color: white;
+  }
+
+  .btn-delete:active {
+    transform: scale(0.9);
   }
 
   .gallery-list::-webkit-scrollbar {
@@ -424,11 +459,11 @@
   }
 
   .gallery-list::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: var(--text-secondary);
     border-radius: 2px;
   }
 
   .gallery-list::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+    background: var(--text-primary);
   }
 </style>

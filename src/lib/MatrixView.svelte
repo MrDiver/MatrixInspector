@@ -92,6 +92,7 @@
     font-weight: bold;
     margin-bottom: 6px;
     font-size: 15px;
+    color: var(--text-primary);
   }
 
   .label :global(i) {
@@ -112,15 +113,15 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border-radius: 10px;
     overflow: visible;
-    background: #f3f4f6;
+    background: var(--bg-tertiary);
     padding: 4px;
   }
   
   table.graybg :global(td) {
-    background: #f5f5f5;
+    background: var(--bg-tertiary) !important;
   }
   
   table.graybg :global(td:hover) {
-    background: #e8e8e8;
+    background: var(--border-color) !important;
   }
 </style>

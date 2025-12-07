@@ -35,21 +35,24 @@
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
   }
   
   input[type="color"] {
     width: 32px;
     height: 32px;
-    border: 2px solid #d1d5db;
+    border: 2px solid var(--border-color);
+    background: var(--bg-secondary);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s ease;
     padding: 0;
+    touch-action: manipulation;
   }
   
   input[type="color"]:hover {
-    border-color: #4363d8;
-    box-shadow: 0 0 0 3px rgba(67, 99, 216, 0.15);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px var(--input-focus-shadow);
   }
   
   .presets {
@@ -67,11 +70,12 @@
     transition: all 0.15s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     position: relative;
+    touch-action: manipulation;
   }
 
   .color-swatch.active {
-    border-color: #1f2937;
-    box-shadow: 0 0 0 2px #4363d8;
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 2px var(--primary-blue);
   }
   
   .color-swatch:hover {
