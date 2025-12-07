@@ -24,9 +24,9 @@ export async function initPyodide() {
   
   try {
     const { loadPyodide } = await import('pyodide');
-    // Use 'lite' build to reduce initial download (~500KB instead of 2.8MB)
+    // Use jsDelivr CDN for full pyodide distribution
     pyodide = await loadPyodide({
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.0/lite/'
+      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.0/full/'
     });
     
     // Install the custom matrix class
