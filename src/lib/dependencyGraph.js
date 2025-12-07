@@ -286,17 +286,10 @@ export function computeO(graph, rows, cols) {
         const ksElement = graph.getElementAt('KS', k, j);
         
         if (sLeftElement?.value && ksElement?.value) {
-          // Track direct contributors
+          // Track base contributors: S_left directly, and the dependencies of KS (K, S_right)
           contributors.push(sLeftElement.id);
-          contributors.push(ksElement.id);
-          
-          // Add S_left dependency
           graph.addDependency(oElement.id, sLeftElement.id);
-          
-          // Add KS dependency (which transitively includes K and S_right)
-          graph.addDependency(oElement.id, ksElement.id);
-          
-          // Also add all KS dependencies to O
+
           for (const ksDepId of ksElement.dependencies) {
             contributors.push(ksDepId);
             graph.addDependency(oElement.id, ksDepId);
@@ -305,8 +298,9 @@ export function computeO(graph, rows, cols) {
       }
       
       // Update O element
-      oElement.value = contributors.length > 0 ? 1 : 0;
-      oElement.dependencies = contributors;
+      const uniqueContributors = Array.from(new Set(contributors));
+      oElement.value = uniqueContributors.length > 0 ? 1 : 0;
+      oElement.dependencies = uniqueContributors;
     }
   }
 }

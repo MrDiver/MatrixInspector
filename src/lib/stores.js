@@ -40,6 +40,9 @@ export const graph = writable(new DependencyGraph());
 // Highlighted elements store (Set of element IDs)
 export const highlightedElements = writable(new Set());
 
+// Python result matrix store
+export const pythonMatrix = writable(null);
+
 /**
  * Initialize matrices with given dimensions
  */
@@ -345,4 +348,153 @@ export function getCSRData(matrixName) {
       elementIds
     };
   });
+}
+
+/**
+ * Export matrix data to JSON format
+ */
+export function exportMatrices() {
+  let currentGraph;
+  let currentRows, currentCols;
+  let currentSymmetric, currentMirror;
+  
+  graph.subscribe(g => currentGraph = g)();
+  rows.subscribe(r => currentRows = r)();
+  cols.subscribe(c => currentCols = c)();
+  symmetric.subscribe(s => currentSymmetric = s)();
+  mirrorS.subscribe(m => currentMirror = m)();
+  
+  const matrixData = {};
+  
+  // Export each matrix
+  ['S_left', 'K', 'S_right', 'O', 'KS'].forEach(matrixName => {
+    const matrixIds = currentGraph.matrices[matrixName];
+    if (!matrixIds) return;
+    
+    const rows = matrixIds.length;
+    const cols = matrixIds[0].length;
+    const data = [];
+    
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        const id = matrixIds[i][j];
+        const element = currentGraph.getNode(id);
+        if (element && element.value) {
+          data.push({
+            row: i,
+            col: j,
+            value: element.value,
+            color: element.color
+          });
+        }
+      }
+    }
+    
+    matrixData[matrixName] = data;
+  });
+  
+  return {
+    version: 1,
+    timestamp: new Date().toISOString(),
+    dimensions: {
+      rows: currentRows,
+      cols: currentCols
+    },
+    configuration: {
+      symmetric: currentSymmetric,
+      mirror: currentMirror
+    },
+    matrices: matrixData
+  };
+}
+
+/**
+ * Import matrix data from JSON format
+ */
+export function importMatrices(jsonData) {
+  try {
+    const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+    
+    if (!data.version || !data.dimensions || !data.matrices) {
+      throw new Error('Invalid matrix data format');
+    }
+    
+    const { rows: r, cols: c } = data.dimensions;
+    const { symmetric: sym, mirror: mir } = data.configuration || {};
+    
+    // Initialize matrices with new dimensions
+    initializeMatrices(r, c, mir || false, sym || false);
+    
+    // Restore matrix data
+    graph.update(g => {
+      ['S_left', 'K', 'S_right', 'O', 'KS'].forEach(matrixName => {
+        const matrixArray = data.matrices[matrixName] || [];
+        
+        matrixArray.forEach(({ row, col, value, color }) => {
+          g.updateElement(matrixName, row, col, value, color);
+        });
+      });
+      
+      return g;
+    });
+    
+    // Recompute derived matrices KS and O
+    recomputeAll();
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to import matrices:', error);
+    return false;
+  }
+}
+
+/**
+ * Save configuration to localStorage
+ */
+export function saveConfigurationToStorage(name) {
+  const data = exportMatrices();
+  const storage = JSON.parse(localStorage.getItem('matrixGallery') || '{}');
+  
+  storage[name] = data;
+  localStorage.setItem('matrixGallery', JSON.stringify(storage));
+  
+  return Object.keys(storage);
+}
+
+/**
+ * Load configuration from localStorage
+ */
+export function loadConfigurationFromStorage(name) {
+  const storage = JSON.parse(localStorage.getItem('matrixGallery') || '{}');
+  
+  if (!storage[name]) {
+    return false;
+  }
+  
+  return importMatrices(storage[name]);
+}
+
+/**
+ * Get all saved configurations
+ */
+export function getSavedConfigurations() {
+  const storage = JSON.parse(localStorage.getItem('matrixGallery') || '{}');
+  
+  return Object.entries(storage).map(([name, data]) => ({
+    name,
+    timestamp: data.timestamp,
+    dimensions: data.dimensions
+  }));
+}
+
+/**
+ * Delete a saved configuration
+ */
+export function deleteConfiguration(name) {
+  const storage = JSON.parse(localStorage.getItem('matrixGallery') || '{}');
+  
+  delete storage[name];
+  localStorage.setItem('matrixGallery', JSON.stringify(storage));
+  
+  return Object.keys(storage);
 }

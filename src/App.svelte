@@ -4,7 +4,10 @@
   import CSRView from './lib/CSRView.svelte';
   import ColorPicker from './lib/ColorPicker.svelte';
   import Notification from './lib/Notification.svelte';
-  import { rows, cols, symmetric, mirrorS, initializeMatrices, generateRandomMatrix, currentColor, syncSLeftToSRight, fillDiagonal, transposeState } from './lib/stores';
+  import Gallery from './lib/Gallery.svelte';
+  import PythonEditor from './lib/PythonEditor.svelte';
+  import PythonMatrixView from './lib/PythonMatrixView.svelte';
+  import { rows, cols, symmetric, mirrorS, initializeMatrices, generateRandomMatrix, currentColor, syncSLeftToSRight, fillDiagonal, transposeState, pythonMatrix } from './lib/stores';
     import { get } from 'svelte/store';
     // Transpose state for each matrix
     $: transpose = $transposeState;
@@ -14,6 +17,11 @@
     }
 
   let notificationComponent;
+    let pythonEditorOpen = false;
+    let pythonResult = null;
+  
+    // Sync Python result into store (including clearing when null)
+    $: pythonMatrix.set(pythonResult);
   
   let rowsValue = 5;
   let colsValue = 5;
@@ -189,6 +197,11 @@
           <rect x="14" y="14" width="7" height="7"/>
         </svg>
       </button>
+      <button on:click={() => pythonEditorOpen = !pythonEditorOpen} class="icon-btn" class:active={pythonEditorOpen} title="Python Editor (Ctrl+P)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9.5 2c-1.82 0-3.53.5-5 1.35C2.99 4.34 2 6.05 2 8c0 .83.09 1.64.26 2.4L2 20h6l.74-10h6.52L16 20h6l-.26-9.6c.17-.76.26-1.57.26-2.4 0-1.95-.99-3.66-2.5-4.65C18.03 2.5 16.32 2 14.5 2z"/>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -266,59 +279,64 @@
   
   <div class="workspace">
     <div class="screenshot-area" id="screenshot-area">
-      <div class="matrix-col">
-        <div style="display: flex; flex-direction: column; align-items: center;">
-          <MatrixView
-            matrixName="S_left"
-            label="S (Left)"
-            paintable={true}
-          />
-          <button class="transpose-btn" on:click={() => toggleTranspose('S_left')} title="Transpose S_left">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
-            {transpose.S_left ? 'Untranspose' : 'Transpose'}
-          </button>
+      <div class="matrix-grid">
+        <div class="matrix-row">
+          <div class="matrix-cell">
+            <MatrixView
+              matrixName="S_left"
+              label="S (Left)"
+              paintable={true}
+            />
+            <button class="transpose-btn" on:click={() => toggleTranspose('S_left')} title="Transpose S_left">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
+              {transpose.S_left ? 'Untranspose' : 'Transpose'}
+            </button>
+          </div>
+          <div class="matrix-cell">
+            <MatrixView
+              matrixName="K"
+              label="K"
+              paintable={true}
+            />
+            <button class="transpose-btn" on:click={() => toggleTranspose('K')} title="Transpose K">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
+              {transpose.K ? 'Untranspose' : 'Transpose'}
+            </button>
+          </div>
+          <div class="matrix-cell">
+            <MatrixView
+              matrixName="S_right"
+              label="S (Right)"
+              paintable={!mirrorSValue}
+            />
+            <button class="transpose-btn" on:click={() => toggleTranspose('S_right')} title="Transpose S_right">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
+              {transpose.S_right ? 'Untranspose' : 'Transpose'}
+            </button>
+          </div>
         </div>
-      </div>
-      <div class="matrix-col">
-        <div style="display: flex; flex-direction: column; align-items: center;">
-          <MatrixView
-            matrixName="K"
-            label="K"
-            paintable={true}
-          />
-          <button class="transpose-btn" on:click={() => toggleTranspose('K')} title="Transpose K">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
-            {transpose.K ? 'Untranspose' : 'Transpose'}
-          </button>
-        </div>
-        <div style="margin-top: 10px;">
-          <MatrixView
-            matrixName="KS"
-            label="KS (Intermediate)"
-            showMiniBlocks={true}
-            grayBackground={true}
-          />
-        </div>
-      </div>
-      <div class="matrix-col">
-        <div style="display: flex; flex-direction: column; align-items: center;">
-          <MatrixView
-            matrixName="S_right"
-            label="S (Right)"
-            paintable={!mirrorSValue}
-          />
-          <button class="transpose-btn" on:click={() => toggleTranspose('S_right')} title="Transpose S_right">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
-            {transpose.S_right ? 'Untranspose' : 'Transpose'}
-          </button>
-        </div>
-        <div style="margin-top: 10px;">
-          <MatrixView
-            matrixName="O"
-            label="O = S_left · K · S_right"
-            showMiniBlocks={true}
-            grayBackground={true}
-          />
+        <div class="matrix-row">
+          <div class="matrix-cell">
+            <MatrixView
+              matrixName="KS"
+              label="KS (Intermediate)"
+              showMiniBlocks={true}
+              grayBackground={true}
+            />
+          </div>
+          <div class="matrix-cell">
+            <MatrixView
+              matrixName="O"
+              label="O = S_left · K · S_right"
+              showMiniBlocks={true}
+              grayBackground={true}
+            />
+          </div>
+          {#if $pythonMatrix}
+            <div class="matrix-cell">
+              <PythonMatrixView label="O(py)" />
+            </div>
+          {/if}
         </div>
       </div>
     </div>
@@ -334,6 +352,8 @@
   {/if}
 
   <Notification bind:this={notificationComponent} />
+  <Gallery />
+  <PythonEditor bind:isOpen={pythonEditorOpen} bind:pythonResult />
 </main>
 
 <style>
@@ -389,6 +409,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  :global(.icon-btn.active) {
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
   }
 
   .icon-btn:hover {
@@ -550,17 +575,34 @@
     gap: 32px;
     align-items: flex-start;
     padding: 24px 24px;
+    margin-top: 12px;
     background: #fff;
     border-radius: 16px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
   }
   
-  .matrix-col {
+  .matrix-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+  }
+
+  .matrix-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: center;
+  }
+
+  .matrix-cell {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 10px;
+    min-width: 220px;
   }
+
   
   .csr-panel {
     display: flex;
