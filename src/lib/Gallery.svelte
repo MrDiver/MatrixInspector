@@ -40,14 +40,18 @@
       return;
     }
     
-    saveConfigurationToStorage(saveName);
+    console.log('[GALLERY] Saving configuration:', saveName);
+    const result = saveConfigurationToStorage(saveName);
+    console.log('[GALLERY] Save result:', result);
     refreshGallery();
     showSaveDialog = false;
     saveName = '';
   }
 
   function handleLoad(name) {
-    loadConfigurationFromStorage(name);
+    console.log('[GALLERY] Loading configuration:', name);
+    const result = loadConfigurationFromStorage(name);
+    console.log('[GALLERY] Load result:', result);
     showGallery = false;
   }
 

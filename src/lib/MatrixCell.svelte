@@ -19,23 +19,13 @@
   
   function handleMouseOver() {
     if (hasValue && !isTouching) {
-      // Cancel any pending clear to prevent flicker
-      if (clearTimer) {
-        clearTimeout(clearTimer);
-        clearTimer = null;
-      }
       highlightElement(element.id);
     }
   }
   
-  let clearTimer;
-  
   function handleMouseLeave() {
     if (!isTouching) {
-      // Delay clearing highlights to prevent flicker when moving between cells
-      clearTimer = setTimeout(() => {
-        clearHighlights();
-      }, 50);
+      clearHighlights();
     }
   }
 

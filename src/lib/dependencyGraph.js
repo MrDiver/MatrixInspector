@@ -45,6 +45,7 @@ export class DependencyGraph {
   constructor() {
     this.nodes = new Map(); // id -> element
     this.matrices = {}; // matrixName -> 2D array of element IDs
+    this.intermediateCounter = 0; // Counter for generated intermediate matrices
   }
 
   /**
@@ -222,85 +223,184 @@ export class DependencyGraph {
     this.matrices = {};
     resetIdCounter();
   }
-}
 
-/**
- * Compute KS = K * S_right and establish dependencies
- */
-export function computeKS(graph, rows, cols) {
-  const matrixName = 'KS';
-  
-  // Clear existing KS dependencies
-  graph.clearMatrixDependencies(matrixName);
-  
-  // For each element in KS
-  for (let i = 0; i < cols; i++) {
-    for (let j = 0; j < cols; j++) {
-      const ksElement = graph.getElementAt(matrixName, i, j);
-      if (!ksElement) continue;
-      
-      // KS[i][j] = sum over t: K[i][t] * S_right[t][j]
-      const contributors = [];
-      
-      for (let t = 0; t < rows; t++) {
-        const kElement = graph.getElementAt('K', i, t);
-        const sRightElement = graph.getElementAt('S_right', t, j);
-        
-        if (kElement?.value && sRightElement?.value) {
-          contributors.push(kElement.id);
-          contributors.push(sRightElement.id);
-          
-          // Add dependencies
-          graph.addDependency(ksElement.id, kElement.id);
-          graph.addDependency(ksElement.id, sRightElement.id);
-        }
-      }
-      
-      // Update KS element
-      ksElement.value = contributors.length > 0 ? 1 : 0;
-      ksElement.dependencies = contributors;
-    }
+  /**
+   * Get matrix data as 2D array of elements
+   */
+  getMatrixData(matrixName) {
+    if (!this.matrices[matrixName]) return null;
+    
+    return this.matrices[matrixName].map(row =>
+      row.map(id => this.nodes.get(id))
+    );
   }
 }
 
 /**
- * Compute O = S_left * KS and establish dependencies
+ * Multiply two matrices and track dependencies
+ * Result dimensions: (left.rows, right.cols)
+ * Dependencies: which base matrix elements contributed to each result element
  */
-export function computeO(graph, rows, cols) {
-  const matrixName = 'O';
+export function multiplyMatrices(graph, leftMatrixName, rightMatrixName, resultMatrixName) {
+  const leftMatrix = graph.getMatrixData(leftMatrixName);
+  const rightMatrix = graph.getMatrixData(rightMatrixName);
   
-  // Clear existing O dependencies
-  graph.clearMatrixDependencies(matrixName);
+  if (!leftMatrix || !rightMatrix) return;
   
-  // For each element in O
-  for (let i = 0; i < rows; i++) {
-    for (let j = 0; j < rows; j++) {
-      const oElement = graph.getElementAt(matrixName, i, j);
-      if (!oElement) continue;
+  const leftRows = leftMatrix.length;
+  const leftCols = leftMatrix[0]?.length || 0;
+  const rightRows = rightMatrix.length;
+  const rightCols = rightMatrix[0]?.length || 0;
+  
+  // Ensure dimensions match for multiplication
+  if (leftCols !== rightRows) {
+    console.error(`Cannot multiply ${leftMatrixName} (${leftRows}×${leftCols}) with ${rightMatrixName} (${rightRows}×${rightCols})`);
+    return;
+  }
+  
+  // Clear result matrix dependencies
+  graph.clearMatrixDependencies(resultMatrixName);
+  
+  // Perform multiplication with dependency tracking
+  const resultData = graph.getMatrixData(resultMatrixName);
+  
+  for (let i = 0; i < leftRows; i++) {
+    for (let j = 0; j < rightCols; j++) {
+      const resultElement = resultData[i][j];
+      if (!resultElement) continue;
       
-      // O[i][j] = sum over k: S_left[i][k] * KS[k][j]
-      const contributors = [];
+      const contributors = new Set();
+      let sum = 0;
       
-      for (let k = 0; k < cols; k++) {
-        const sLeftElement = graph.getElementAt('S_left', i, k);
-        const ksElement = graph.getElementAt('KS', k, j);
+      // result[i][j] = sum over k: left[i][k] * right[k][j]
+      for (let k = 0; k < leftCols; k++) {
+        const leftElem = leftMatrix[i][k];
+        const rightElem = rightMatrix[k][j];
         
-        if (sLeftElement?.value && ksElement?.value) {
-          // Track base contributors: S_left directly, and the dependencies of KS (K, S_right)
-          contributors.push(sLeftElement.id);
-          graph.addDependency(oElement.id, sLeftElement.id);
-
-          for (const ksDepId of ksElement.dependencies) {
-            contributors.push(ksDepId);
-            graph.addDependency(oElement.id, ksDepId);
+        if (leftElem?.value && rightElem?.value) {
+          // Add contribution
+          sum += leftElem.value * rightElem.value;
+          
+          // Track direct dependencies
+          contributors.add(leftElem.id);
+          contributors.add(rightElem.id);
+          
+          // Also add transitive dependencies
+          for (const depId of leftElem.dependencies) {
+            contributors.add(depId);
+          }
+          for (const depId of rightElem.dependencies) {
+            contributors.add(depId);
           }
         }
       }
       
-      // Update O element
-      const uniqueContributors = Array.from(new Set(contributors));
-      oElement.value = uniqueContributors.length > 0 ? 1 : 0;
-      oElement.dependencies = uniqueContributors;
+      // Set result value
+      resultElement.value = sum;
+      
+      // Set up dependencies
+      for (const depId of contributors) {
+        graph.addDependency(resultElement.id, depId);
+      }
     }
   }
+}
+
+/**
+ * Transpose a matrix and create a new transposed matrix with dependency tracking
+ * Returns the name of the transposed matrix
+ */
+export function transposeMatrix(graph, matrixName) {
+  const sourceData = graph.getMatrixData(matrixName);
+  if (!sourceData) return null;
+  
+  const sourceRows = sourceData.length;
+  const sourceCols = sourceData[0]?.length || 0;
+  
+  // Create transposed matrix name
+  const transposedName = `${matrixName}_T`;
+  
+  // Initialize transposed matrix if not exists
+  if (!graph.matrices[transposedName]) {
+    graph.initMatrix(transposedName, sourceCols, sourceRows);
+  }
+  
+  // Clear dependencies in case we're recomputing
+  graph.clearMatrixDependencies(transposedName);
+  
+  // Copy transposed values and dependencies
+  const transposedData = graph.getMatrixData(transposedName);
+  
+  for (let i = 0; i < sourceRows; i++) {
+    for (let j = 0; j < sourceCols; j++) {
+      const sourceElem = sourceData[i][j];
+      const transposedElem = transposedData[j][i]; // Note: j, i reversed
+      
+      if (sourceElem && transposedElem) {
+        transposedElem.value = sourceElem.value;
+        transposedElem.color = sourceElem.color;
+        
+        // The transposed element depends on the source element
+        graph.addDependency(transposedElem.id, sourceElem.id);
+        
+        // Also inherit dependencies from source
+        for (const depId of sourceElem.dependencies) {
+          graph.addDependency(transposedElem.id, depId);
+        }
+      }
+    }
+  }
+  
+  return transposedName;
+}
+
+/**
+ * Evaluate a formula AST and compute the result matrix
+ * Returns the result matrix name
+ */
+export function evaluateFormula(graph, ast, baseMatrixNames) {
+  if (!ast) return null;
+  
+  // If it's a single matrix (leaf node)
+  if (ast.type === 'matrix') {
+    // Check if we need to transpose
+    if (ast.transpose) {
+      return transposeMatrix(graph, ast.name);
+    }
+    return ast.name;
+  }
+  
+  // If it's a multiplication
+  if (ast.type === 'multiply') {
+    // Recursively evaluate left and right subtrees
+    const leftMatrixName = evaluateFormula(graph, ast.left, baseMatrixNames);
+    const rightMatrixName = evaluateFormula(graph, ast.right, baseMatrixNames);
+    
+    if (!leftMatrixName || !rightMatrixName) return null;
+    
+    // Generate intermediate result name
+    const intermediateIndex = (graph.intermediateCounter || 0) + 1;
+    graph.intermediateCounter = intermediateIndex;
+    const intermediateName = `_TEMP_${intermediateIndex}`;
+    
+    // Initialize intermediate matrix if not exists
+    const leftData = graph.getMatrixData(leftMatrixName);
+    const rightData = graph.getMatrixData(rightMatrixName);
+    
+    if (!leftData || !rightData) return null;
+    
+    const resultRows = leftData.length;
+    const resultCols = rightData[0]?.length || 0;
+    
+    if (!graph.matrices[intermediateName]) {
+      graph.initMatrix(intermediateName, resultRows, resultCols);
+    }
+    
+    // Perform multiplication
+    multiplyMatrices(graph, leftMatrixName, rightMatrixName, intermediateName);
+    
+    return intermediateName;
+  }
+  
+  return null;
 }
