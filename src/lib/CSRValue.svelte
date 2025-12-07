@@ -85,14 +85,14 @@
   }
   
   .csr-value-container.csr-highlight {
-    box-shadow: 0 0 0 3px #ff3333,
-                0 0 8px rgba(255, 51, 51, 0.5);
+    box-shadow: 0 0 0 3px #fa709a,
+                0 0 8px rgba(250, 112, 154, 0.5);
     z-index: 5;
   }
 
   :global(html.dark) .csr-value-container.csr-highlight {
-    box-shadow: 0 0 0 3px #ff6666,
-                0 0 8px rgba(255, 102, 102, 0.5);
+    box-shadow: 0 0 0 3px #fa709a,
+                0 0 8px rgba(250, 112, 154, 0.5);
   }
   
   .mini-block {

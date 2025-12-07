@@ -113,7 +113,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border-radius: 10px;
     overflow: visible;
-    background: #f3f4f6;
+    background: var(--bg-tertiary);
     padding: 4px;
   }
 
@@ -122,7 +122,7 @@
   }
   
   table.graybg :global(td:not([style*="background"])) {
-    background: #f5f5f5;
+    background: var(--bg-tertiary);
   }
 
   :global(html.dark) table.graybg :global(td:not([style*="background"])) {
@@ -130,7 +130,7 @@
   }
   
   table.graybg :global(td:hover:not([style*="background"])) {
-    background: #e8e8e8;
+    background: var(--bg-secondary);
   }
 
   :global(html.dark) table.graybg :global(td:hover:not([style*="background"])) {

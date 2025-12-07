@@ -371,8 +371,8 @@ O_py  # Return the result
 
   .float-card {
     position: relative;
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 14px;
     box-shadow: 0 12px 36px rgba(17, 24, 39, 0.18);
     padding: 16px;
@@ -452,18 +452,18 @@ O_py  # Return the result
   .title-text .main {
     font-size: 16px;
     font-weight: 700;
-    color: #111827;
+    color: var(--text-primary);
   }
 
   .title-text .sub {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--text-secondary);
   }
 
   .loading-badge {
     font-size: 11px;
-    background: #eef2ff;
-    color: #4338ca;
+    background: #667eea;
+    color: white;
     padding: 2px 8px;
     border-radius: 10px;
     margin-left: 6px;
@@ -495,7 +495,7 @@ O_py  # Return the result
     color: white;
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s;
-    background: #1f2937;
+    background: var(--button-primary);
   }
 
   .icon-btn:disabled {
@@ -509,18 +509,18 @@ O_py  # Return the result
   }
 
   .icon-btn.run {
-    background: #10b981;
+    background: #43e97b;
   }
 
   .icon-btn.clear {
-    background: #ef4444;
+    background: #fa709a;
   }
 
   .icon-btn.close {
     width: 32px;
     height: 32px;
-    background: #e5e7eb;
-    color: #1f2937;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     box-shadow: none;
   }
 
@@ -541,7 +541,7 @@ O_py  # Return the result
   .section-label {
     font-size: 12px;
     font-weight: 700;
-    color: #6b7280;
+    color: var(--text-secondary);
     letter-spacing: 0.5px;
     text-transform: uppercase;
   }
@@ -552,18 +552,19 @@ O_py  # Return the result
 
   .help-text {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--text-secondary);
     line-height: 1.5;
     margin: 0;
     flex-shrink: 0;
   }
 
   .help-text code {
-    background: #e5e7eb;
+    background: var(--bg-tertiary);
     padding: 2px 4px;
     border-radius: 4px;
     font-family: 'Monaco', 'Menlo', monospace;
     font-size: 11px;
+    color: var(--text-primary);
   }
 
   .stdout-body, .stderr-body {
@@ -581,34 +582,36 @@ O_py  # Return the result
     white-space: pre-wrap;
     word-break: break-word;
     min-height: 64px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    background: var(--bg-secondary);
   }
 
   .output.empty {
-    background: #f9fafb;
-    color: #9ca3af;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
     border-style: dashed;
   }
 
   .output.success {
-    background: #f0fdf4;
-    border-color: #86efac;
-    color: #166534;
+    background: rgba(67, 233, 123, 0.1);
+    border-color: #43e97b;
+    color: #43e97b;
   }
 
   .output.loading {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #6b7280;
-    background: white;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
   }
 
   .spinner {
     width: 16px;
     height: 16px;
-    border: 2px solid #e5e7eb;
-    border-top-color: #667eea;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--button-primary);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
@@ -616,8 +619,8 @@ O_py  # Return the result
   .mini-spinner {
     width: 14px;
     height: 14px;
-    border: 2px solid #e5e7eb;
-    border-top-color: #10b981;
+    border: 2px solid var(--border-color);
+    border-top-color: #43e97b;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
@@ -627,8 +630,8 @@ O_py  # Return the result
   }
 
   .log-card {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 10px;
     display: flex;
@@ -638,14 +641,14 @@ O_py  # Return the result
   }
 
   .log-card.error-log {
-    border-color: #fecdd3;
-    background: #fff1f2;
+    border-color: #fa709a;
+    background: rgba(250, 112, 154, 0.1);
   }
 
   .log-title {
     font-size: 11px;
     font-weight: 700;
-    color: #374151;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.6px;
   }
@@ -658,15 +661,15 @@ O_py  # Return the result
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-word;
-    color: #111827;
+    color: var(--text-primary);
   }
 
   .error-callout {
     padding: 10px;
     border-radius: 10px;
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
-    color: #991b1b;
+    background: rgba(250, 112, 154, 0.1);
+    border: 1px solid #fa709a;
+    color: #fa709a;
     font-size: 13px;
   }
 

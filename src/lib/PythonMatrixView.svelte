@@ -152,22 +152,22 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border-radius: 10px;
     overflow: visible;
-    background: #f3f4f6;
+    background: var(--bg-tertiary);
     padding: 4px;
   }
 
   .python-matrix.graybg :global(td) {
-    background: #f5f5f5;
+    background: var(--bg-tertiary);
   }
 
   .python-matrix.graybg :global(td:hover) {
-    background: #e8e8e8;
+    background: var(--bg-secondary);
   }
   
   .cell {
     width: var(--cell-size);
     height: var(--cell-size);
-    background: #fcfcfc;
+    background: var(--bg-secondary);
     border: none;
     position: relative;
     transition: transform 0.08s ease, box-shadow 0.08s ease, outline-color 0.08s ease;
@@ -177,13 +177,13 @@
   }
   
   .cell.has-value {
-    background: #f7f7f7;
+    background: var(--bg-tertiary);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
   }
   
   .cell.highlighted {
-    box-shadow: 0 0 0 3px #ff3333,
-                0 0 12px rgba(255, 51, 51, 0.55);
+    box-shadow: 0 0 0 3px #fa709a,
+                0 0 12px rgba(250, 112, 154, 0.55);
     background: #fff2f2;
     z-index: 6;
   }

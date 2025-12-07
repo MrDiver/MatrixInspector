@@ -193,14 +193,23 @@
   }
 
   :global(.cm-gutters) {
-    background: var(--bg-tertiary);
+    background: var(--bg-tertiary) !important;
     border-right: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    color: var(--text-secondary) !important;
+  }
+
+  :global(.cm-lineNumbers) {
+    background: var(--bg-tertiary) !important;
+  }
+
+  :global(.cm-lineNumbers .cm-gutterMarker),
+  :global(.cm-lineNumbers .cm-gutterElement) {
+    color: var(--text-secondary) !important;
   }
 
   :global(.cm-activeLineGutter) {
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
   }
 
   :global(.cm-cursor) {
@@ -231,6 +240,19 @@
     color: var(--text-primary);
     border: 1px solid var(--border-color);
     font-size: 12px;
+  }
+
+  :global(.cm-tooltip.cm-tooltip-autocomplete) {
+    background: var(--bg-primary);
+  }
+
+  :global(.cm-tooltip.cm-tooltip-autocomplete > ul) {
+    background: var(--bg-primary);
+  }
+
+  :global(.cm-tooltip.cm-tooltip-autocomplete > ul > li) {
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
 
   :global(.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]) {
