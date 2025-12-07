@@ -591,14 +591,14 @@
   }
 
   .btn-primary {
-    background: var(--primary-blue);
+    background: var(--button-primary);
     color: white;
   }
 
   .btn-primary:hover {
-    background: var(--primary-blue-hover);
+    background: var(--button-primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(67, 99, 216, 0.3);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
   }
 
   .btn-primary:active {
@@ -606,14 +606,14 @@
   }
 
   .btn-accent {
-    background: var(--accent-cyan);
-    color: #1a202c;
+    background: var(--button-secondary);
+    color: white;
   }
 
   .btn-accent:hover {
-    background: var(--accent-cyan-hover);
+    background: var(--button-secondary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(70, 240, 240, 0.3);
+    box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
   }
 
   .btn-accent:active {

@@ -16,23 +16,42 @@ export const rows = writable(5);
 export const cols = writable(5);
 export const symmetric = writable(false);
 export const mirrorS = writable(true);
-export const currentColor = writable('#46f0f0');
 
-// Preset colors - Distinct but softer palette
+// Define color palette - Soft pastels that work well in both light and dark modes
+export const COLOR_PALETTE = {
+  primary: '#667eea',     // Soft Indigo
+  secondary: '#764ba2',   // Soft Purple
+  accent1: '#f093fb',     // Soft Pink
+  accent2: '#4facfe',     // Soft Blue
+  accent3: '#43e97b',     // Soft Green
+  accent4: '#fa709a',     // Soft Rose
+  accent5: '#30b0fe',     // Sky Blue
+  accent6: '#a8edea',     // Soft Cyan
+  accent7: '#fed6e3',     // Blush
+  accent8: '#ffeaa7',     // Soft Yellow
+  accent9: '#fd79a8',     // Mauve
+  accent10: '#6c5ce7',    // Periwinkle
+  accent11: '#00b894',    // Mint
+  accent12: '#fdcb6e'     // Honey
+};
+
+// Preset colors - Soft pastel palette for matrix cells
 export const PRESET_COLORS = [
-  '#E07A5F', // Terracotta
-  '#81B29A', // Sage Green
-  '#F2CC8F', // Soft Gold
-  '#3D5A80', // Slate Blue
-  '#9D84B7', // Soft Purple
-  '#E8A0BF', // Dusty Rose
-  '#6DB1BF', // Ocean Blue
-  '#A8C5DA', // Powder Blue
-  '#F4D58D', // Mellow Yellow
-  '#5A9D8C', // Sea Green
-  '#D4789C', // Mauve
-  '#8B6F9E'  // Amethyst
+  COLOR_PALETTE.accent1,  // Soft Pink
+  COLOR_PALETTE.accent2,  // Soft Blue
+  COLOR_PALETTE.accent3,  // Soft Green
+  COLOR_PALETTE.accent4,  // Soft Rose
+  COLOR_PALETTE.accent5,  // Sky Blue
+  COLOR_PALETTE.accent6,  // Soft Cyan
+  COLOR_PALETTE.accent7,  // Blush
+  COLOR_PALETTE.accent8,  // Soft Yellow
+  COLOR_PALETTE.accent9,  // Mauve
+  COLOR_PALETTE.accent10, // Periwinkle
+  COLOR_PALETTE.accent11, // Mint
+  COLOR_PALETTE.accent12  // Honey
 ];
+
+export const currentColor = writable(COLOR_PALETTE.accent1);
 
 // Main dependency graph
 export const graph = writable(new DependencyGraph());

@@ -3,6 +3,16 @@
   line-height: 1.5;
   font-weight: 400;
   
+  /* Color palette - Soft pastels */
+  --color-primary: #667eea;
+  --color-secondary: #764ba2;
+  --color-pink: #f093fb;
+  --color-blue: #4facfe;
+  --color-green: #43e97b;
+  --color-rose: #fa709a;
+  --color-sky: #30b0fe;
+  --color-cyan: #a8edea;
+  
   /* Light theme - Clean, professional palette */
   --bg-primary: #fafbfc;
   --bg-secondary: #f0f2f5;
@@ -11,16 +21,16 @@
   --text-secondary: #718096;
   --text-tertiary: #4a5568;
   --border-color: #cbd5e0;
-  --header-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --header-gradient: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
   --button-hover-bg: rgba(102, 126, 234, 0.1);
   --button-active-bg: rgba(102, 126, 234, 0.15);
   --input-focus-shadow: rgba(102, 126, 234, 0.15);
   
-  /* Common colors */
-  --primary-blue: #4363d8;
-  --primary-blue-hover: #3451b8;
-  --accent-cyan: #06b6d4;
-  --accent-cyan-hover: #0891b2;
+  /* Button colors - matching palette */
+  --button-primary: var(--color-primary);
+  --button-primary-hover: #5568d3;
+  --button-secondary: var(--color-blue);
+  --button-secondary-hover: #3b95e8;
   --danger-red: #ef4444;
   --danger-red-hover: #dc2626;
   
@@ -43,18 +53,18 @@ html.dark {
   --text-secondary: #94a3b8;
   --text-tertiary: #cbd5e1;
   --border-color: #334155;
-  --header-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --header-gradient: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
   --button-hover-bg: rgba(102, 126, 234, 0.15);
   --button-active-bg: rgba(102, 126, 234, 0.2);
   --input-focus-shadow: rgba(102, 126, 234, 0.3);
   
-  /* Common colors - same as light for consistency */
-  --primary-blue: #4363d8;
-  --primary-blue-hover: #3451b8;
-  --accent-cyan: #06b6d4;
-  --accent-cyan-hover: #0891b2;
+  /* Button colors - matching palette */
+  --button-primary: var(--color-primary);
+  --button-primary-hover: #7a8ff5;
+  --button-secondary: var(--color-blue);
+  --button-secondary-hover: #5db9ff;
   --danger-red: #ef4444;
-  --danger-red-hover: #dc2626;
+  --danger-red-hover: #f87171;
   
   color-scheme: dark;
 }
