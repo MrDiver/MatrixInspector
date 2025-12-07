@@ -72,7 +72,6 @@
   style:background={hasValue
     ? (showMiniBlocks ? '#f7f7f7' : (element.color || '#4CAF50'))
     : ''}
-  class:empty={!hasValue}
   role={paintable ? 'button' : 'cell'}
   tabindex={paintable ? 0 : -1}
 >
@@ -105,11 +104,8 @@
   }
 
   :global(html.dark) td {
-    box-shadow: none;
-  }
-
-  :global(html.dark) td.empty {
     background: #1a1a1a;
+    box-shadow: none;
   }
   
   

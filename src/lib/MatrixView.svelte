@@ -121,19 +121,19 @@
     background: #3a3a3a;
   }
   
-  table.graybg :global(td) {
+  table.graybg :global(td:not([style*="background"])) {
     background: #f5f5f5;
   }
 
-  :global(html.dark) table.graybg :global(td) {
+  :global(html.dark) table.graybg :global(td:not([style*="background"])) {
     background: #262626 !important;
   }
   
-  table.graybg :global(td:hover) {
+  table.graybg :global(td:hover:not([style*="background"])) {
     background: #e8e8e8;
   }
 
-  :global(html.dark) table.graybg :global(td:hover) {
+  :global(html.dark) table.graybg :global(td:hover:not([style*="background"])) {
     background: #303030 !important;
   }
 </style>
