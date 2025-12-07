@@ -85,14 +85,14 @@
   }
   
   .csr-value-container.csr-highlight {
-    box-shadow: 0 0 0 3px #fa709a,
-                0 0 8px rgba(250, 112, 154, 0.5);
+    box-shadow: 0 0 0 3px var(--color-rose),
+                0 0 8px color-mix(in srgb, var(--color-rose) 65%, transparent);
     z-index: 5;
   }
 
   :global(html.dark) .csr-value-container.csr-highlight {
-    box-shadow: 0 0 0 3px #fa709a,
-                0 0 8px rgba(250, 112, 154, 0.5);
+    box-shadow: 0 0 0 3px var(--color-rose),
+                0 0 8px color-mix(in srgb, var(--color-rose) 65%, transparent);
   }
   
   .mini-block {

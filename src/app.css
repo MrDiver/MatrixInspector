@@ -17,6 +17,10 @@
   --bg-primary: #fafbfc;
   --bg-secondary: #f0f2f5;
   --bg-tertiary: #e8ecf1;
+  --matrix-table-bg: var(--bg-secondary);
+  --matrix-cell-bg: var(--bg-primary);
+  --matrix-cell-filled-bg: var(--bg-primary);
+  --matrix-cell-hover-bg: var(--bg-secondary);
   --text-primary: #1a202c;
   --text-secondary: #718096;
   --text-tertiary: #4a5568;
@@ -49,6 +53,10 @@ html.dark {
   --bg-primary: #0f172a;
   --bg-secondary: #0a0f1c;
   --bg-tertiary: #1a2642;
+  --matrix-table-bg: var(--bg-tertiary);
+  --matrix-cell-bg: var(--bg-primary);
+  --matrix-cell-filled-bg: var(--bg-primary);
+  --matrix-cell-hover-bg: var(--bg-secondary);
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-tertiary: #cbd5e1;

@@ -46,7 +46,7 @@
       // Get dependencies with colors
       const deps = elem.dependencies.map(depId => {
         const depElem = $graph.getNode(depId);
-        return depElem?.color || '#000000';
+         return depElem?.color || 'var(--text-primary)';
       });
       
       return {
@@ -113,27 +113,23 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border-radius: 10px;
     overflow: visible;
-    background: var(--bg-tertiary);
+    background: var(--matrix-table-bg);
     padding: 4px;
-  }
-
-  :global(html.dark) table {
-    background: #3a3a3a;
   }
   
   table.graybg :global(td:not([style*="background"])) {
-    background: var(--bg-tertiary);
+    background: var(--matrix-cell-bg);
   }
 
   :global(html.dark) table.graybg :global(td:not([style*="background"])) {
-    background: #262626 !important;
+    background: var(--matrix-cell-bg) !important;
   }
   
   table.graybg :global(td:hover:not([style*="background"])) {
-    background: var(--bg-secondary);
+    background: var(--matrix-cell-hover-bg);
   }
 
   :global(html.dark) table.graybg :global(td:hover:not([style*="background"])) {
-    background: #303030 !important;
+    background: var(--matrix-cell-hover-bg) !important;
   }
 </style>

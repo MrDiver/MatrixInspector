@@ -71,7 +71,7 @@
   on:focus={handleMouseOver}
   on:blur={handleMouseLeave}
   style:background={hasValue
-    ? (showMiniBlocks ? '#f7f7f7' : (element.color || '#4CAF50'))
+    ? (showMiniBlocks ? 'var(--matrix-cell-filled-bg)' : (element.color || 'var(--color-primary)'))
     : ''}
   role={paintable ? 'button' : 'cell'}
   tabindex={paintable ? 0 : -1}
@@ -97,7 +97,7 @@
     transition: transform 0.08s ease, box-shadow 0.08s ease, outline-color 0.08s ease;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
     border-radius: 6px;
-    background: var(--bg-tertiary, #fcfcfc);
+    background: var(--matrix-cell-bg);
     --mini-size: calc(var(--cell-size, 32px) * 0.22);
     --mini-step: calc(var(--cell-size, 32px) * 0.25);
     --mini-offset: calc(var(--cell-size, 32px) * 0.06);
@@ -105,12 +105,12 @@
   }
 
   :global(html.dark) td {
-    background: #1a1a1a;
+    background: var(--matrix-cell-bg);
     box-shadow: none;
   }
 
   :global(html.dark) td.miniblocks {
-    background: #2a2a2a !important;
+    background: var(--matrix-cell-filled-bg) !important;
   }
   
   
@@ -144,16 +144,16 @@
   }
   
   td.highlight {
-    box-shadow: 0 0 0 3px #fa709a,
-                0 0 12px rgba(250, 112, 154, 0.55);
-    background: #fff2f2;
+    box-shadow: 0 0 0 3px var(--color-rose),
+                0 0 12px color-mix(in srgb, var(--color-rose) 70%, transparent);
+    background: color-mix(in srgb, var(--color-rose) 18%, var(--bg-primary));
     z-index: 6;
   }
 
   :global(html.dark) td.highlight {
-    box-shadow: 0 0 0 3px #fa709a,
-                0 0 12px rgba(250, 112, 154, 0.6);
-    background: #3a1a2a;
+    box-shadow: 0 0 0 3px var(--color-rose),
+                0 0 12px color-mix(in srgb, var(--color-rose) 75%, transparent);
+    background: color-mix(in srgb, var(--color-rose) 20%, var(--bg-primary));
   }
   
   .mini {
