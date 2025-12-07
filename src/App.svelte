@@ -634,6 +634,14 @@
   .btn-secondary:active {
     transform: translateY(0);
   }
+
+  :global(html.dark) .btn-secondary {
+    background: #fa709a;
+  }
+
+  :global(html.dark) .btn-secondary:hover {
+    background: #f55a86;
+  }
   
   .workspace {
     display: flex;

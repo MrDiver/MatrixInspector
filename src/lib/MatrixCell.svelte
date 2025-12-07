@@ -144,16 +144,16 @@
   }
   
   td.highlight {
-    box-shadow: 0 0 0 3px #ff3333,
-                0 0 12px rgba(255, 51, 51, 0.55);
+    box-shadow: 0 0 0 3px #fa709a,
+                0 0 12px rgba(250, 112, 154, 0.55);
     background: #fff2f2;
     z-index: 6;
   }
 
   :global(html.dark) td.highlight {
-    box-shadow: 0 0 0 3px #ff5555,
-                0 0 12px rgba(255, 85, 85, 0.6);
-    background: #3a1a1a;
+    box-shadow: 0 0 0 3px #fa709a,
+                0 0 12px rgba(250, 112, 154, 0.6);
+    background: #3a1a2a;
   }
   
   .mini {
