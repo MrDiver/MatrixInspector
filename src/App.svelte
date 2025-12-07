@@ -307,6 +307,7 @@
               matrixName="S_left"
               label="S (Left)"
               paintable={true}
+              grayBackground={true}
             />
             <button class="transpose-btn" on:click={() => toggleTranspose('S_left')} title="Transpose S_left">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
@@ -318,6 +319,7 @@
               matrixName="K"
               label="K"
               paintable={true}
+              grayBackground={true}
             />
             <button class="transpose-btn" on:click={() => toggleTranspose('K')} title="Transpose K">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
@@ -329,6 +331,7 @@
               matrixName="S_right"
               label="S (Right)"
               paintable={!mirrorSValue}
+              grayBackground={true}
             />
             <button class="transpose-btn" on:click={() => toggleTranspose('S_right')} title="Transpose S_right">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
