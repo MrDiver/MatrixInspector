@@ -55,6 +55,9 @@ export const graph = writable(new DependencyGraph());
 // Highlighted elements store (Set of element IDs)
 export const highlightedElements = writable(new Set());
 
+// Persistent selections in O matrix (stays across hovers)
+export const persistentSelections = writable(new Set());
+
 // Python result matrix store
 export const pythonMatrix = writable(null);
 
@@ -307,13 +310,61 @@ export function fillDiagonal(matrixName, color = null) {
  * Recompute all derived matrices based on current formula
  */
 /**
- * Highlight an element and its dependencies
+ * Highlight an element and its dependencies (replaces current highlights)
  */
 export function highlightElement(elementId) {
   graph.subscribe(g => {
     const deps = g.getAllDependencies(elementId);
     highlightedElements.set(deps);
   })();
+}
+
+/**
+ * Toggle an element in the persistent selections (for Ctrl+Click in O matrix)
+ */
+export function togglePersistentSelection(elementId) {
+  graph.subscribe(g => {
+    const deps = g.getAllDependencies(elementId);
+    
+    // Update both persistent selections and highlighted elements
+    persistentSelections.update(current => {
+      const newSet = new Set(current);
+      
+      // If all dependencies are already selected, remove them
+      const allPresent = Array.from(deps).every(id => newSet.has(id));
+      
+      if (allPresent) {
+        deps.forEach(id => newSet.delete(id));
+      } else {
+        // Otherwise add them
+        deps.forEach(id => newSet.add(id));
+      }
+      
+      return newSet;
+    });
+    
+    // Sync highlightedElements with persistent selections
+    persistentSelections.subscribe(sel => {
+      highlightedElements.set(new Set(sel));
+    })();
+  })();
+}
+
+/**
+ * Clear persistent selections
+ */
+export function clearPersistentSelections() {
+  persistentSelections.set(new Set());
+  highlightedElements.set(new Set());
+}
+
+/**
+ * Get current persistent selections (for restoring after hover)
+ */
+export function getPersistentSelections() {
+  let result = null;
+  persistentSelections.subscribe(sel => result = new Set(sel))();
+  return result;
 }
 
 /**

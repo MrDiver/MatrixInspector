@@ -1,6 +1,6 @@
 <script>
   import MatrixCell from './MatrixCell.svelte';
-  import { getMatrixData, toggleElement, currentColor, graph } from '../lib/stores';
+  import { getMatrixData, toggleElement, currentColor, graph, highlightedElements, persistentSelections } from '../lib/stores';
   
   export let matrixName;
   export let label = '';
@@ -31,6 +31,7 @@
   $: scale = computeScale(maxDim);
   $: cellSize = 32 * scale;
   $: cellGap = Math.max(1, 3 * scale);
+  $: anyHighlighted = $highlightedElements.size > 0;
   
   function handlePaint(row, col) {
     if (paintable) {
@@ -61,6 +62,9 @@
   {#if label}
     <div class="label">{@html formattedLabel}</div>
   {/if}
+  {#if matrixName === 'O' && $persistentSelections.size === 0}
+    <div class="hint-text">💡 Ctrl/Cmd+Click on cells to multi-select patterns</div>
+  {/if}
   <div class="matrix-wrapper" style={`--matrix-scale:${scale}; --cell-size:${cellSize}px; --cell-gap:${cellGap}px;`}>
     <table class:graybg={grayBackground}>
       <tbody>
@@ -71,7 +75,9 @@
                 {element}
                 {paintable}
                 {showMiniBlocks}
+                {anyHighlighted}
                 onPaint={handlePaint}
+                matrixName={matrixName}
               />
             {/each}
           </tr>
@@ -100,6 +106,14 @@
     font-style: italic;
     font-size: 17px;
     letter-spacing: 0.5px;
+  }
+
+  .hint-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    opacity: 0.7;
+    font-style: italic;
   }
   
   .matrix-wrapper {

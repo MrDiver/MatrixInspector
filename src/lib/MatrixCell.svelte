@@ -1,35 +1,61 @@
 <script>
-  import { highlightElement, clearHighlights, highlightedElements } from '../lib/stores';
+  import { highlightElement, togglePersistentSelection, clearHighlights, highlightedElements, persistentSelections } from '../lib/stores';
   
   export let element;
   export let paintable = false;
   export let showMiniBlocks = false;
+  export let anyHighlighted = false;
   export let onPaint = null;
+  export let matrixName = ''; // Track which matrix this cell belongs to
   
   $: isHighlighted = $highlightedElements.has(element.id);
   $: hasValue = element.value !== 0;
+  $: shouldDim = anyHighlighted && !isHighlighted;
   
   let isTouching = false;
   
-  function handleClick() {
+  function handleClick(event) {
+    // For paint mode
     if (paintable && onPaint) {
       onPaint(element.row, element.col);
+      return;
+    }
+    
+    // For O matrix: support multi-select with Ctrl/Cmd+Click
+    if (matrixName === 'O' && hasValue && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      togglePersistentSelection(element.id);
     }
   }
   
   function handleMouseOver() {
     if (hasValue && !isTouching) {
-      highlightElement(element.id);
-    }
-  }
-  
-  function handleMouseLeave() {
-    if (!isTouching) {
-      clearHighlights();
+      // In O matrix: preserve persistent selections while hovering
+      if (matrixName === 'O') {
+        // Add hover highlight to persistent selections temporarily
+        const hasPersistent = $persistentSelections.size > 0;
+        if (!hasPersistent) {
+          // Only use normal hover if no persistent selections
+          highlightElement(element.id);
+        }
+      } else {
+        // Other matrices: normal hover behavior
+        highlightElement(element.id);
+      }
     }
   }
 
-  function handleTouchStart() {
+  function handleMouseLeave() {
+    if (!isTouching) {
+      if (matrixName === 'O') {
+        // In O matrix: restore persistent selections
+        highlightedElements.set(new Set($persistentSelections));
+      } else {
+        // Other matrices: clear all highlights
+        clearHighlights();
+      }
+    }
+  }  function handleTouchStart() {
     isTouching = true;
     if (paintable && onPaint) {
       onPaint(element.row, element.col);
@@ -62,6 +88,7 @@
   class:paintable
   class:highlight={isHighlighted}
   class:miniblocks={showMiniBlocks && hasValue}
+  class:dimmed={shouldDim}
   data-has-value={hasValue}
   data-id={element.id}
   on:click={handleClick}
@@ -124,12 +151,12 @@
   
   
   /* Dim non-highlighted cells when any cell is highlighted */
-  :global(body:has(.highlight)) td:not(.highlight) {
+  td.dimmed {
     opacity: 0.35;
     transition: opacity 0.3s ease;
   }
-  
-  :global(body:not(:has(.highlight))) td {
+
+  td:not(.dimmed) {
     transition: opacity 0.3s ease;
   }
 

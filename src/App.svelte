@@ -8,7 +8,7 @@
   import PythonEditor from './lib/PythonEditor.svelte';
   import PythonMatrixView from './lib/PythonMatrixView.svelte';
   import FormulaToolbar from './lib/FormulaToolbar.svelte';
-  import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, setMatrixDimensions } from './lib/stores';
+  import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, setMatrixDimensions, clearPersistentSelections, persistentSelections } from './lib/stores';
   import { getBaseMatrices, getAllMatrixReferences } from './lib/formulaParser';
   import { darkMode } from './lib/themeStore';
   import './sw-registration.js';
@@ -300,12 +300,25 @@
           <!-- Row 2: Result Matrix -->
           <div class="matrix-row result-row">
             <div class="matrix-cell">
-              <MatrixView
-                matrixName="O"
-                label="O = {$parsedFormula.raw}"
-                showMiniBlocks={true}
-                grayBackground={true}
-              />
+              <div class="matrix-with-controls">
+                <MatrixView
+                  matrixName="O"
+                  label="O = {$parsedFormula.raw}"
+                  showMiniBlocks={true}
+                  grayBackground={true}
+                />
+                {#if $persistentSelections.size > 0}
+                  <div class="selection-controls">
+                    <button 
+                      class="clear-btn"
+                      on:click={clearPersistentSelections}
+                      title="Clear pattern selection (Ctrl+Click cells to multi-select)"
+                    >
+                      Clear Selection ({$persistentSelections.size})
+                    </button>
+                  </div>
+                {/if}
+              </div>
             </div>
             {#if $pythonMatrix}
               <div class="matrix-cell">
@@ -813,4 +826,41 @@
       font-size: 11px;
     }
   }
+
+  .matrix-with-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .selection-controls {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .clear-btn {
+    padding: 8px 16px;
+    background: var(--color-rose);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(250, 112, 154, 0.25);
+  }
+
+  .clear-btn:hover {
+    background: #e63f7d;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(250, 112, 154, 0.35);
+  }
+
+  .clear-btn:active {
+    transform: translateY(0);
+  }
 </style>
+
