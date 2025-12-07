@@ -1,47 +1,22 @@
 <script>
   import { onMount } from 'svelte';
   import { parseFormula } from './formulaParser';
-  import { currentFormula, parsedFormula, manualRecomputeFormula } from './stores';
+  import { currentFormula, parsedFormula } from './stores';
   
   let formula = $currentFormula;
-  let hasError = false;
   
-  function handleInputChange() {
+  function handleInput() {
     const parsed = parseFormula(formula);
-    hasError = !!parsed.error;
-    // Don't auto-set parsedFormula - wait for button click
-  }
-  
-  function handleComputeClick() {
-    console.log('[FORMULA] Compute clicked, formula:', formula);
-    const parsed = parseFormula(formula);
-    if (parsed.error) {
-      console.log('[FORMULA] Parse error:', parsed.error);
-      hasError = true;
-      return;
-    }
-    
-    hasError = false;
-    console.log('[FORMULA] Formula parsed successfully:', parsed);
     currentFormula.set(formula);
-    parsedFormula.set(parsed);
-    console.log('[FORMULA] Calling manual recompute');
-    manualRecomputeFormula();
-    console.log('[FORMULA] Compute complete');
+    parsedFormula.set(parsed.error ? null : parsed);
   }
-  
-  // Update local formula when store changes (e.g., from loading)
-  $: formula = $currentFormula;
   
   // Parse the initial formula on mount
   onMount(() => {
-    const parsed = parseFormula(formula);
-    hasError = !!parsed.error;
-    if (!parsed.error) {
-      parsedFormula.set(parsed);
-    }
+    handleInput();
   });
-
+  
+  $: hasError = formula && parseFormula(formula).error;
 </script>
 
 <div class="formula-toolbar">
@@ -50,22 +25,14 @@
     id="formula-input"
     type="text"
     bind:value={formula}
-    on:input={handleInputChange}
+    on:input={handleInput}
     placeholder="e.g., S*K*S or A*A^T"
     class:error={hasError}
   />
-  <button 
-    on:click={handleComputeClick}
-    class="compute-btn"
-    disabled={hasError}
-    title="Compute the result matrix"
-  >
-    Compute
-  </button>
   <div class="formula-examples">
-    <button class="example-btn" on:click={() => { formula = 'S*K*S'; }}>S×K×S</button>
-    <button class="example-btn" on:click={() => { formula = 'A*A^T'; }}>A×A^T</button>
-    <button class="example-btn" on:click={() => { formula = 'P_0^T*K_0*P_0'; }}>P₀^T×K₀×P₀</button>
+    <button class="example-btn" on:click={() => { formula = 'S*K*S'; handleInput(); }}>S×K×S</button>
+    <button class="example-btn" on:click={() => { formula = 'A*A^T'; handleInput(); }}>A×A^T</button>
+    <button class="example-btn" on:click={() => { formula = 'P_0^T*K_0*P_0'; handleInput(); }}>P₀^T×K₀×P₀</button>
   </div>
 </div>
 
@@ -86,7 +53,9 @@
   }
   
   input {
-    flex: 0 1 300px;
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
     padding: 8px 12px;
     border: 2px solid var(--border-color);
     border-radius: 6px;
@@ -104,29 +73,6 @@
   
   input.error {
     border-color: var(--danger-red);
-  }
-
-  .compute-btn {
-    padding: 8px 16px;
-    background: #667eea;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
-
-  .compute-btn:hover:not(:disabled) {
-    background: #5568d3;
-    opacity: 1;
-  }
-
-  .compute-btn:disabled {
-    background: #999;
-    opacity: 0.5;
-    cursor: not-allowed;
   }
   
   .formula-examples {

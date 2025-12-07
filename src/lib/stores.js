@@ -10,7 +10,6 @@ export const transposeState = writable({
  */
 import { writable, derived } from 'svelte/store';
 import { DependencyGraph, evaluateFormula } from './dependencyGraph';
-import { parseFormula, getBaseMatrices } from './formulaParser';
 
 // Configuration stores
 export const rows = writable(5);
@@ -68,13 +67,9 @@ export const currentFormula = writable('S*K*S'); // Default formula
 export const parsedFormula = writable(null);
 
 /**
- * Initialize matrices from formula (without recomputing)
- * @param {string[]} matrixNames - Names of base matrices to initialize
- * @param {number} defaultRows - Number of rows
- * @param {number} defaultCols - Number of columns
- * @param {boolean} shouldRecompute - Whether to trigger recomputation (default: true)
+ * Initialize matrices from formula
  */
-export function initializeFormulaMatrices(matrixNames, defaultRows = 5, defaultCols = 5, shouldRecompute = true) {
+export function initializeFormulaMatrices(matrixNames, defaultRows = 5, defaultCols = 5) {
   graph.update(g => {
     g.clear();
     
@@ -92,18 +87,14 @@ export function initializeFormulaMatrices(matrixNames, defaultRows = 5, defaultC
   rows.set(defaultRows);
   cols.set(defaultCols);
   
-  // Only compute result if explicitly requested
-  if (shouldRecompute) {
-    recomputeFormula();
-  }
+  // Compute result based on formula
+  recomputeFormula();
 }
 
 /**
  * Recompute result matrix based on current formula using actual matrix multiplication
  */
 export function recomputeFormula() {
-  console.log('[RECOMPUTE] Starting recompute...');
-  console.log('[RECOMPUTE] Call stack:', new Error().stack);
   let parsed = null;
   let r = 5;
   let c = 5;
@@ -112,36 +103,23 @@ export function recomputeFormula() {
   rows.subscribe(val => r = val)();
   cols.subscribe(val => c = val)();
   
-  console.log('[RECOMPUTE] Parsed formula:', parsed);
-  console.log('[RECOMPUTE] Dimensions:', r, 'x', c);
-  
   // @ts-ignore - parsed comes from store subscription
-  if (!parsed || !parsed.ast) {
-    console.log('[RECOMPUTE] No parsed formula or AST, aborting');
-    return;
-  }
+  if (!parsed || !parsed.ast) return;
   
   graph.update(g => {
-    console.log('[RECOMPUTE] Graph has matrices:', Object.keys(g.matrices));
-    
     // Reset intermediate counter for fresh computation
     g.intermediateCounter = 0;
     
     // Evaluate the formula AST (performs actual matrix multiplication)
     // @ts-ignore - parsed is checked for ast above
     const resultMatrixName = evaluateFormula(g, parsed.ast, Array.from(parsed.variables));
-    console.log('[RECOMPUTE] Result matrix name:', resultMatrixName);
     
     // Copy result to O matrix
     if (resultMatrixName && resultMatrixName !== 'O') {
       const resultData = g.getMatrixData(resultMatrixName);
       const oData = g.getMatrixData('O');
       
-      console.log('[RECOMPUTE] Result data exists:', !!resultData);
-      console.log('[RECOMPUTE] O data exists:', !!oData);
-      
       if (resultData && oData) {
-        let copiedCount = 0;
         for (let i = 0; i < resultData.length; i++) {
           for (let j = 0; j < resultData[i].length; j++) {
             const resultElem = resultData[i][j];
@@ -150,59 +128,23 @@ export function recomputeFormula() {
             if (resultElem && oElem) {
               oElem.value = resultElem.value;
               oElem.dependencies = [...resultElem.dependencies];
-              if (resultElem.value !== 0) copiedCount++;
             }
           }
         }
-        console.log('[RECOMPUTE] Copied', copiedCount, 'non-zero values to O matrix');
       }
     }
     
     return g;
   });
-  
-  console.log('[RECOMPUTE] Recompute finished, forcing graph update');
-  graph.update(g => g); // Force UI update
 }
 
 /**
- * Flag to control whether formula subscription should trigger recomputation
+ * Subscribe to formula changes and recompute automatically
  */
-let shouldAutoRecompute = false; // Changed to false - no auto-recompute by default
-
-/**
- * Manually trigger recomputation of the O matrix
- */
-export function manualRecomputeFormula() {
-  console.log('[MANUAL RECOMPUTE] Manually triggered');
+parsedFormula.subscribe(() => {
+  // Trigger recomputation when formula changes
   recomputeFormula();
-  console.log('[MANUAL RECOMPUTE] Complete');
-}
-
-/**
- * Temporarily disable auto-recomputation (e.g., during data loading)
- */
-export function disableAutoRecompute() {
-  shouldAutoRecompute = false;
-}
-
-/**
- * Re-enable auto-recomputation
- */
-export function enableAutoRecompute() {
-  shouldAutoRecompute = true;
-}
-
-/**
- * Subscribe to formula changes - but DON'T auto-recompute
- * User must click the Compute button to trigger computation
- */
-// Commented out - we use manual compute button now
-// parsedFormula.subscribe(() => {
-//   if (shouldAutoRecompute) {
-//     recomputeFormula();
-//   }
-// });
+});
 
 /**
  * Initialize matrices with given dimensions
@@ -504,61 +446,35 @@ export function getCSRData(matrixName) {
 }
 
 /**
- * Export matrix data to JSON format - saves EVERYTHING
+ * Export matrix data to JSON format
  */
 export function exportMatrices() {
-  console.log('[EXPORT] Starting export...');
   let currentGraph;
   let currentRows, currentCols;
   let currentSymmetric, currentMirror;
-  let currentFormulaText;
-  let parsedFormulaData;
   
   graph.subscribe(g => currentGraph = g)();
   rows.subscribe(r => currentRows = r)();
   cols.subscribe(c => currentCols = c)();
   symmetric.subscribe(s => currentSymmetric = s)();
   mirrorS.subscribe(m => currentMirror = m)();
-  currentFormula.subscribe(f => currentFormulaText = f)();
-  parsedFormula.subscribe(p => parsedFormulaData = p)();
-  
-  console.log('[EXPORT] Formula:', currentFormulaText);
-  console.log('[EXPORT] Dimensions:', currentRows, 'x', currentCols);
   
   const matrixData = {};
   
-  if (!currentGraph) {
-    console.log('[EXPORT] No graph, returning empty export');
-    return {
-      version: 2,
-      timestamp: new Date().toISOString(),
-      formula: currentFormulaText || 'S*K*S',
-      dimensions: { rows: 5, cols: 5 },
-      configuration: { symmetric: false, mirror: false },
-      matrices: {}
-    };
-  }
-  
-  // Export ONLY base matrices (not transposed, intermediate, or O)
-  // The computed matrices will be regenerated on load
-  // @ts-ignore - parsedFormulaData has variables from parseFormula output
-  const baseMatrices = parsedFormulaData?.variables ? Array.from(parsedFormulaData.variables) : [];
-  console.log('[EXPORT] Base matrices to export:', baseMatrices);
-  
-  baseMatrices.forEach(matrixName => {
+  // Export each matrix
+  ['S_left', 'K', 'S_right', 'O', 'KS'].forEach(matrixName => {
     const matrixIds = currentGraph.matrices[matrixName];
     if (!matrixIds) return;
     
     const rows = matrixIds.length;
-    const cols = matrixIds[0]?.length || 0;
+    const cols = matrixIds[0].length;
     const data = [];
     
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
         const id = matrixIds[i][j];
         const element = currentGraph.getNode(id);
-        // Only save non-zero painted cells
-        if (element && element.value !== 0 && element.color) {
+        if (element && element.value) {
           data.push({
             row: i,
             col: j,
@@ -569,14 +485,12 @@ export function exportMatrices() {
       }
     }
     
-    console.log(`[EXPORT] Matrix "${matrixName}": ${data.length} non-zero cells saved (${rows}x${cols})`);
     matrixData[matrixName] = data;
   });
   
-  const result = {
-    version: 2,
+  return {
+    version: 1,
     timestamp: new Date().toISOString(),
-    formula: currentFormulaText,
     dimensions: {
       rows: currentRows,
       cols: currentCols
@@ -585,22 +499,15 @@ export function exportMatrices() {
       symmetric: currentSymmetric,
       mirror: currentMirror
     },
-    matrices: matrixData,
-    // @ts-ignore - currentGraph is DependencyGraph
-    idCounter: currentGraph?.nodes?.size || 0 // Save ID counter state
+    matrices: matrixData
   };
-  
-  console.log('[EXPORT] Export complete:', result);
-  return result;
 }
 
 /**
- * Import matrix data from JSON format - uses existing functions like manual input
+ * Import matrix data from JSON format
  */
 export function importMatrices(jsonData) {
   try {
-    console.log('[IMPORT] Starting import with data:', jsonData);
-    
     const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
     
     if (!data.version || !data.dimensions || !data.matrices) {
@@ -609,91 +516,29 @@ export function importMatrices(jsonData) {
     
     const { rows: r, cols: c } = data.dimensions;
     const { symmetric: sym, mirror: mir } = data.configuration || {};
-    const formula = data.formula || 'S*K*S';
     
-    console.log('[IMPORT] Formula:', formula);
-    console.log('[IMPORT] Dimensions:', r, 'x', c);
-    console.log('[IMPORT] Version:', data.version);
-    console.log('[IMPORT] Matrices to restore:', Object.keys(data.matrices));
+    // Initialize matrices with new dimensions
+    initializeMatrices(r, c, mir || false, sym || false);
     
-    // Handle version 1 (old format with S_left, S_right, KS)
-    if (data.version === 1) {
-      console.log('[IMPORT] OLD VERSION 1 FORMAT - needs migration to new formula system');
-      alert('This is an old save format. Please re-save after loading to update to the new format.');
-      
-      // For old saves, we need to migrate the data
-      const migratedMatrices = {};
-      if (data.matrices.S_left) {
-        migratedMatrices.S = data.matrices.S_left;
-      }
-      if (data.matrices.K) {
-        migratedMatrices.K = data.matrices.K;
-      }
-      data.matrices = migratedMatrices;
-    }
-    
-    // Step 1: Disable auto-recompute for the entire import process
-    console.log('[IMPORT] Step 1: Disabling auto-recompute...');
-    disableAutoRecompute();
-    
-    // Step 2: Set dimensions and settings FIRST (before creating matrices)
-    console.log('[IMPORT] Step 2: Setting dimensions and settings...');
-    rows.set(r);
-    cols.set(c);
-    symmetric.set(sym || false);
-    mirrorS.set(mir || false);
-    
-    // Step 3: Parse the formula
-    console.log('[IMPORT] Step 3: Parsing formula...');
-    const parsed = parseFormula(formula);
-    if (parsed.error) {
-      disableAutoRecompute(); // Make sure to re-enable on error
-      throw new Error(`Invalid formula: ${parsed.error}`);
-    }
-    
-    // Step 4: Set formula in the store (won't trigger recompute - disabled)
-    console.log('[IMPORT] Step 4: Setting formula...');
-    currentFormula.set(formula);
-    parsedFormula.set(parsed);
-    
-    // Step 5: Initialize matrices using existing function with correct dimensions
-    console.log('[IMPORT] Step 5: Initializing matrices from formula...');
-    const baseMatrices = getBaseMatrices(parsed);
-    console.log('[IMPORT] Base matrices needed:', baseMatrices);
-    initializeFormulaMatrices(baseMatrices, r, c, false); // Don't recompute yet
-    
-    // Step 6: "Paint" the cells (same way generateRandomMatrix does it)
-    console.log('[IMPORT] Step 6: Restoring painted cells...');
+    // Restore matrix data
     graph.update(g => {
-      Object.keys(data.matrices).forEach(matrixName => {
-        const matrixArray = data.matrices[matrixName];
-        console.log(`[IMPORT] Restoring ${matrixArray.length} cells for matrix "${matrixName}"`);
+      ['S_left', 'K', 'S_right', 'O', 'KS'].forEach(matrixName => {
+        const matrixArray = data.matrices[matrixName] || [];
         
-        // Restore each painted cell
         matrixArray.forEach(({ row, col, value, color }) => {
           g.updateElement(matrixName, row, col, value, color);
         });
       });
+      
       return g;
     });
-    console.log('[IMPORT] All cells restored');
     
-    // Step 7: Recompute (same as generateRandomMatrix does)
-    console.log('[IMPORT] Step 7: Calling recomputeAll()...');
+    // Recompute derived matrices KS and O
     recomputeAll();
-    
-    // Step 8: Re-enable auto-recompute AFTER a delay to avoid reactivity triggering another compute
-    console.log('[IMPORT] Step 8: Scheduling auto-recompute re-enable...');
-    setTimeout(() => {
-      enableAutoRecompute();
-      console.log('[IMPORT] Auto-recompute re-enabled');
-    }, 200);
-    
-    console.log('[IMPORT] Import complete!');
     
     return true;
   } catch (error) {
-    console.error('[IMPORT] ERROR:', error);
+    console.error('Failed to import matrices:', error);
     return false;
   }
 }
