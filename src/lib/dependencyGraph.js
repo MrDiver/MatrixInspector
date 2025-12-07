@@ -320,8 +320,9 @@ export function transposeMatrix(graph, matrixName) {
   // Create transposed matrix name
   const transposedName = `${matrixName}_T`;
   
-  // Initialize transposed matrix if not exists
-  if (!graph.matrices[transposedName]) {
+  // Initialize or resize transposed matrix
+  const existing = graph.matrices[transposedName];
+  if (!existing || existing.length !== sourceCols || (existing[0]?.length || 0) !== sourceRows) {
     graph.initMatrix(transposedName, sourceCols, sourceRows);
   }
   
@@ -392,7 +393,8 @@ export function evaluateFormula(graph, ast, baseMatrixNames) {
     const resultRows = leftData.length;
     const resultCols = rightData[0]?.length || 0;
     
-    if (!graph.matrices[intermediateName]) {
+    const existing = graph.matrices[intermediateName];
+    if (!existing || existing.length !== resultRows || (existing[0]?.length || 0) !== resultCols) {
       graph.initMatrix(intermediateName, resultRows, resultCols);
     }
     

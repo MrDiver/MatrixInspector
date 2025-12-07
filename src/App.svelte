@@ -8,10 +8,9 @@
   import PythonEditor from './lib/PythonEditor.svelte';
   import PythonMatrixView from './lib/PythonMatrixView.svelte';
   import FormulaToolbar from './lib/FormulaToolbar.svelte';
-  import { rows, cols, symmetric, mirrorS, initializeMatrices, initializeFormulaMatrices, generateRandomMatrix, currentColor, syncSLeftToSRight, fillDiagonal, transposeState, pythonMatrix, parsedFormula } from './lib/stores';
+  import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, setMatrixDimensions } from './lib/stores';
   import { getBaseMatrices, getAllMatrixReferences } from './lib/formulaParser';
   import { darkMode } from './lib/themeStore';
-  import { get } from 'svelte/store';
   import './sw-registration.js';
     // Transpose state for each matrix
     $: transpose = $transposeState;
@@ -24,7 +23,7 @@
     $: if ($parsedFormula) {
       const baseMatrices = getBaseMatrices($parsedFormula);
       if (baseMatrices.length > 0) {
-        initializeFormulaMatrices(baseMatrices, rowsValue, colsValue);
+        initializeFormulaMatrices(baseMatrices);
       }
     }
 
@@ -35,88 +34,36 @@
     // Sync Python result into store (including clearing when null)
     $: pythonMatrix.set(pythonResult);
   
-  let rowsValue = 5;
-  let colsValue = 5;
   let symmetricValue = false;
-  let mirrorSValue = false;
   let sparsityValue = 0.3;
   let generateSymmetric = false;
   let showCSR = true;
   
   onMount(() => {
-    // Initialize matrices on mount
-    initializeMatrices(rowsValue, colsValue, mirrorSValue, symmetricValue);
-    
     // Initialize formula-driven matrices
     const baseMatrices = getBaseMatrices($parsedFormula);
     if (baseMatrices.length > 0) {
-      initializeFormulaMatrices(baseMatrices, rowsValue, colsValue);
+      initializeFormulaMatrices(baseMatrices);
     }
   });
   
-  // Watch mirror checkbox and sync when enabled
-  $: if (mirrorSValue) {
-    syncSLeftToSRight();
-  }
-  
   // Sync symmetric checkbox to store
-  $: symmetric.set(symmetricValue);
-  
-  // Sync mirror checkbox to store
-  $: mirrorS.set(mirrorSValue);
-  
-  // Watch for row/col changes and resize immediately
-  $: if (rowsValue && colsValue) {
-    handleResize();
-  }
-  
-  function handleResize() {
-    const r = Math.max(1, Math.min(50, rowsValue));
-    const c = Math.max(1, Math.min(50, colsValue));
-    
-    // Only resize if dimensions actually changed
-    let currentRows, currentCols;
-    rows.subscribe(val => currentRows = val)();
-    cols.subscribe(val => currentCols = val)();
-    
-    if (r !== currentRows || c !== currentCols) {
-      initializeMatrices(r, c, mirrorSValue, symmetricValue);
-    }
-  }
+  $: symmetric.set(symmetricValue)
   
   function handleClear() {
-    initializeMatrices(
-      Math.max(1, rowsValue),
-      Math.max(1, colsValue),
-      mirrorSValue,
-      symmetricValue
-    );
-  }
-  
-  function handleRandomS() {
-    let color;
-    currentColor.subscribe(c => color = c)();
-    generateRandomMatrix('S_left', sparsityValue, generateSymmetric, color);
-    
-    if (mirrorSValue) {
-      // Copy S_left to S_right when mirror is enabled
-      generateRandomMatrix('S_right', 0, false, color); // Clear first
-      // The paint will be mirrored automatically
+    // Clear matrices based on current formula
+    const baseMatrices = getBaseMatrices($parsedFormula);
+    if (baseMatrices.length > 0) {
+      initializeFormulaMatrices(baseMatrices);
     }
   }
-  
-  function handleRandomK() {
-    let color;
-    currentColor.subscribe(c => color = c)();
-    generateRandomMatrix('K', sparsityValue, generateSymmetric, color);
-  }
-  
-  function handleRandomSRight() {
-    let color;
-    currentColor.subscribe(c => color = c)();
-    generateRandomMatrix('S_right', sparsityValue, generateSymmetric, color);
-  }
 
+  function handleDimensionInput(matrixName, key, value) {
+    const dims = $matrixDimensions[matrixName] || { rows: 5, cols: 5 };
+    const next = { ...dims, [key]: Number(value) };
+    setMatrixDimensions(matrixName, next.rows, next.cols);
+  }
+  
   function handleFillDiagonal(matrixName) {
     let color;
     currentColor.subscribe(c => color = c)();
@@ -249,15 +196,32 @@
   <div class="toolbar">
     <div class="toolbar-row">
       <div class="toolbar-section">
-        <span class="section-label">📐 Dimensions</span>
-        <label class="input-group">
-          <span>Rows</span>
-          <input type="number" min="1" max="50" bind:value={rowsValue}/>
-        </label>
-        <label class="input-group">
-          <span>Cols</span>
-          <input type="number" min="1" max="50" bind:value={colsValue}/>
-        </label>
+        <span class="section-label">📐 Matrix Dimensions</span>
+        {#if $parsedFormula}
+          {@const baseMatrices = getBaseMatrices($parsedFormula)}
+          {#each baseMatrices as matrixName}
+            <div class="dimension-spinner">
+              <label class="input-group">
+                <span>{matrixName}</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={$matrixDimensions[matrixName]?.rows || 5}
+                  on:change={(e) => { const el = e.target; if (el instanceof HTMLInputElement) handleDimensionInput(matrixName, 'rows', el.value); }}
+                />
+                <span class="x">×</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={$matrixDimensions[matrixName]?.cols || 5}
+                  on:change={(e) => { const el = e.target; if (el instanceof HTMLInputElement) handleDimensionInput(matrixName, 'cols', el.value); }}
+                />
+              </label>
+            </div>
+          {/each}
+        {/if}
       </div>
 
       <div class="toolbar-section">
@@ -279,10 +243,6 @@
           <input type="checkbox" bind:checked={symmetricValue} />
           <span>Symmetric</span>
         </label>
-        <label class="checkbox-label">
-          <input type="checkbox" bind:checked={mirrorSValue} />
-          <span>Mirror S</span>
-        </label>
       </div>
     </div>
 
@@ -301,7 +261,6 @@
     </div>
   </div>
 
-  
   <div class="workspace">
     <div class="screenshot-area" id="screenshot-area">
       {#if $parsedFormula}
@@ -370,7 +329,7 @@
   {/if}
 
   <Notification bind:this={notificationComponent} />
-  <Gallery />
+  <Gallery on:notify={(e) => notificationComponent?.show(e.detail.message, e.detail.type)} />
   <PythonEditor bind:isOpen={pythonEditorOpen} bind:pythonResult />
 </main>
 
@@ -552,6 +511,24 @@
   .input-group span {
     font-weight: 500;
     white-space: nowrap;
+  }
+
+  .dimension-spinner {
+    display: flex;
+    align-items: center;
+  }
+
+  .dimension-spinner .input-group {
+    gap: 4px;
+  }
+
+  .dimension-spinner .x {
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 2px;
+    display: flex;
+    align-items: center;
+    height: 1.2em;
   }
 
   .checkbox-label {

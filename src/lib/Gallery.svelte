@@ -1,6 +1,8 @@
 <script>
   import { getSavedConfigurations, loadConfigurationFromStorage, deleteConfiguration, saveConfigurationToStorage, exportMatrices, importMatrices } from './stores';
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher();
 
   let savedConfigs = [];
   let showSaveDialog = false;
@@ -39,22 +41,36 @@
       alert('Please enter a configuration name');
       return;
     }
-    
-    saveConfigurationToStorage(saveName);
-    refreshGallery();
-    showSaveDialog = false;
-    saveName = '';
+    const result = saveConfigurationToStorage(saveName);
+    if (result?.success) {
+      refreshGallery();
+      showSaveDialog = false;
+      saveName = '';
+      dispatch('notify', { message: `Saved "${saveName}"`, type: 'success' });
+    } else {
+      dispatch('notify', { message: result?.error || 'Failed to save configuration', type: 'error' });
+    }
   }
 
   function handleLoad(name) {
-    loadConfigurationFromStorage(name);
-    showGallery = false;
+    const result = loadConfigurationFromStorage(name);
+    if (result?.success) {
+      dispatch('notify', { message: `Loaded "${name}"`, type: 'success' });
+      showGallery = false;
+    } else {
+      dispatch('notify', { message: result?.error || 'Failed to load configuration', type: 'error' });
+    }
   }
 
   function handleDelete(name) {
     if (confirm(`Delete configuration "${name}"?`)) {
-      deleteConfiguration(name);
-      refreshGallery();
+      const result = deleteConfiguration(name);
+      if (result?.success) {
+        refreshGallery();
+        dispatch('notify', { message: `Deleted "${name}"`, type: 'success' });
+      } else {
+        dispatch('notify', { message: result?.error || 'Failed to delete configuration', type: 'error' });
+      }
     }
   }
 
@@ -71,6 +87,7 @@
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    dispatch('notify', { message: 'Exported configuration', type: 'success' });
   }
 
   function handleImport() {
@@ -85,17 +102,18 @@
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
-          const result = event.target?.result;
-          if (typeof result !== 'string') return;
+          const fileText = event.target?.result;
+          if (typeof fileText !== 'string') return;
           
-          const data = JSON.parse(result);
-          if (importMatrices(data)) {
-            alert('Configuration imported successfully!');
+          const data = JSON.parse(fileText);
+          const importResult = importMatrices(data);
+          if (importResult?.success) {
+            dispatch('notify', { message: 'Configuration imported successfully', type: 'success' });
           } else {
-            alert('Failed to import configuration');
+            dispatch('notify', { message: importResult?.error || 'Failed to import configuration', type: 'error' });
           }
         } catch (error) {
-          alert('Invalid JSON file');
+          dispatch('notify', { message: 'Invalid JSON file', type: 'error' });
         }
       };
       reader.readAsText(file);

@@ -2,21 +2,26 @@
   import { onMount } from 'svelte';
   import { parseFormula } from './formulaParser';
   import { currentFormula, parsedFormula } from './stores';
-  
-  let formula = $currentFormula;
-  
-  function handleInput() {
-    const parsed = parseFormula(formula);
-    currentFormula.set(formula);
+
+  let lastParsedFormula = $currentFormula;
+
+  function handleInput(value) {
+    const parsed = parseFormula(value);
     parsedFormula.set(parsed.error ? null : parsed);
   }
-  
+
   // Parse the initial formula on mount
   onMount(() => {
-    handleInput();
+    handleInput($currentFormula);
   });
+
+  // Re-parse whenever currentFormula changes (including programmatic updates)
+  $: if ($currentFormula !== lastParsedFormula) {
+    lastParsedFormula = $currentFormula;
+    handleInput($currentFormula);
+  }
   
-  $: hasError = formula && parseFormula(formula).error;
+  $: hasError = $currentFormula && parseFormula($currentFormula).error;
 </script>
 
 <div class="formula-toolbar">
@@ -24,15 +29,15 @@
   <input
     id="formula-input"
     type="text"
-    bind:value={formula}
-    on:input={handleInput}
+    bind:value={$currentFormula}
+    on:input={(e) => handleInput(e.currentTarget.value)}
     placeholder="e.g., S*K*S or A*A^T"
     class:error={hasError}
   />
   <div class="formula-examples">
-    <button class="example-btn" on:click={() => { formula = 'S*K*S'; handleInput(); }}>S×K×S</button>
-    <button class="example-btn" on:click={() => { formula = 'A*A^T'; handleInput(); }}>A×A^T</button>
-    <button class="example-btn" on:click={() => { formula = 'P_0^T*K_0*P_0'; handleInput(); }}>P₀^T×K₀×P₀</button>
+    <button class="example-btn" on:click={() => { currentFormula.set('S*K*S'); }}>S×K×S</button>
+    <button class="example-btn" on:click={() => { currentFormula.set('A*A^T'); }}>A×A^T</button>
+    <button class="example-btn" on:click={() => { currentFormula.set('P_0^T*K_0*P_0'); }}>P₀^T×K₀×P₀</button>
   </div>
 </div>
 
