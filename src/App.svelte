@@ -153,28 +153,52 @@
     fillDiagonal(matrixName, color);
   }
   
+  async function renderAreaToBlob(area) {
+    const { default: html2canvas } = await import('html2canvas');
+
+    const width = area.offsetWidth || area.scrollWidth;
+    const height = area.offsetHeight || area.scrollHeight;
+    const scale = Math.min(2, window.devicePixelRatio || 1.5);
+
+    const canvas = await html2canvas(area, {
+      backgroundColor: '#ffffff',
+      scale,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      width,
+      height,
+      scrollX: 0,
+      scrollY: 0
+    });
+
+    const blob = await new Promise(resolve => canvas.toBlob(resolve));
+    if (blob) return blob;
+
+    // Fallback: dataURL -> Blob to avoid null toBlob results
+    const dataUrl = canvas.toDataURL('image/png');
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  }
+
   async function captureMatrixScreenshot() {
     const area = document.getElementById('screenshot-area');
     if (!area) return;
     try {
-      const { default: html2canvas } = await import('html2canvas');
-      const canvas = await html2canvas(area, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        logging: false
-      });
-      canvas.toBlob((blob) => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `matrix-inspector-${Date.now()}.png`;
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
-        notificationComponent.show('Screenshot downloaded!', 'success');
-      });
+      area.classList.add('screenshot-safe');
+      const blob = await renderAreaToBlob(area);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `matrix-inspector-${Date.now()}.png`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+      notificationComponent.show('Screenshot downloaded!', 'success');
     } catch (error) {
       console.error('Screenshot failed:', error);
       notificationComponent.show('Screenshot failed. Please try again.', 'error');
+    } finally {
+      area.classList.remove('screenshot-safe');
     }
   }
 
@@ -182,29 +206,21 @@
     const area = document.getElementById('screenshot-area');
     if (!area) return;
     try {
-      const { default: html2canvas } = await import('html2canvas');
-      const canvas = await html2canvas(area, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        logging: false
-      });
+      area.classList.add('screenshot-safe');
+      const blob = await renderAreaToBlob(area);
       if (navigator.clipboard && window.ClipboardItem) {
-        canvas.toBlob(async (blob) => {
-          try {
-            await navigator.clipboard.write([
-              new window.ClipboardItem({ 'image/png': blob })
-            ]);
-            notificationComponent.show('Screenshot copied to clipboard!', 'success');
-          } catch (err) {
-            notificationComponent.show('Copy to clipboard failed.', 'error');
-          }
-        });
+        await navigator.clipboard.write([
+          new window.ClipboardItem({ 'image/png': blob })
+        ]);
+        notificationComponent.show('Screenshot copied to clipboard!', 'success');
       } else {
         notificationComponent.show('Clipboard API not supported.', 'error');
       }
     } catch (error) {
       console.error('Screenshot failed:', error);
       notificationComponent.show('Screenshot failed. Please try again.', 'error');
+    } finally {
+      area.classList.remove('screenshot-safe');
     }
   }
 </script>
@@ -1175,6 +1191,20 @@
   .shortcut-item span {
     color: var(--text-primary);
     font-size: 14px;
+  }
+
+  /* Screenshot-safe overrides to avoid unsupported CSS color functions */
+  :global(.screenshot-safe *) {
+    box-shadow: none !important;
+    filter: none !important;
+    background-image: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Restore visible highlights in screenshot-safe mode without color-mix/gradients */
+  :global(.screenshot-safe td.highlight) {
+    box-shadow: inset 0 0 0 3px var(--cell-highlight) !important;
+    background: linear-gradient(135deg, var(--cell-highlight) 0%, rgba(0, 0, 0, 0.05) 100%) !important;
   }
 </style>
 

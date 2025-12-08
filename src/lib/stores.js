@@ -73,6 +73,19 @@ export const highlightedElements = writable(new Set());
 // Persistent selections in O matrix (stays across hovers)
 export const persistentSelections = writable(new Set());
 
+// Source cells selected in O matrix (to recompute persistentSelections robustly)
+export const persistentSelectionSources = writable(new Set());
+
+function computePersistentHighlights(graphInstance, sources) {
+  const union = new Set();
+  if (!graphInstance || !sources) return union;
+  sources.forEach(id => {
+    const deps = graphInstance.getAllDependencies(id);
+    deps.forEach(dep => union.add(dep));
+  });
+  return union;
+}
+
 // Python result matrix store
 export const pythonMatrix = writable(null);
 
@@ -359,29 +372,19 @@ export function highlightElement(elementId) {
  */
 export function togglePersistentSelection(elementId) {
   graph.subscribe(g => {
-    const deps = g.getAllDependencies(elementId);
-    
-    // Update both persistent selections and highlighted elements
-    persistentSelections.update(current => {
-      const newSet = new Set(current);
-      
-      // If all dependencies are already selected, remove them
-      const allPresent = Array.from(deps).every(id => newSet.has(id));
-      
-      if (allPresent) {
-        deps.forEach(id => newSet.delete(id));
+    persistentSelectionSources.update(src => {
+      const next = new Set(src);
+      if (next.has(elementId)) {
+        next.delete(elementId);
       } else {
-        // Otherwise add them
-        deps.forEach(id => newSet.add(id));
+        next.add(elementId);
       }
-      
-      return newSet;
+
+      const union = computePersistentHighlights(g, next);
+      persistentSelections.set(union);
+      highlightedElements.set(union);
+      return next;
     });
-    
-    // Sync highlightedElements with persistent selections
-    persistentSelections.subscribe(sel => {
-      highlightedElements.set(new Set(sel));
-    })();
   })();
 }
 
@@ -389,6 +392,7 @@ export function togglePersistentSelection(elementId) {
  * Clear persistent selections
  */
 export function clearPersistentSelections() {
+  persistentSelectionSources.set(new Set());
   persistentSelections.set(new Set());
   highlightedElements.set(new Set());
 }

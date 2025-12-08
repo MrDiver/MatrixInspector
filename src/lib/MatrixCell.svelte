@@ -1,5 +1,5 @@
 <script>
-  import { highlightElement, togglePersistentSelection, clearHighlights, highlightedElements, persistentSelections } from '../lib/stores';
+  import { highlightElement, togglePersistentSelection, clearHighlights, highlightedElements, persistentSelections, persistentSelectionSources } from '../lib/stores';
   
   export let element;
   export let paintable = false;
@@ -48,6 +48,9 @@
   
   function handleMouseOver() {
     if (hasValue && !isTouching) {
+      if ($persistentSelectionSources.size > 0) {
+        return; // Preserve persistent highlights during hover
+      }
       // In O matrix: preserve persistent selections while hovering
       if (matrixName === 'O') {
         // Add hover highlight to persistent selections temporarily
@@ -65,6 +68,10 @@
 
   function handleMouseLeave() {
     if (!isTouching) {
+      if ($persistentSelectionSources.size > 0) {
+        highlightedElements.set(new Set($persistentSelections));
+        return;
+      }
       if (matrixName === 'O') {
         // In O matrix: restore persistent selections
         highlightedElements.set(new Set($persistentSelections));
@@ -73,7 +80,9 @@
         clearHighlights();
       }
     }
-  }  function handleTouchStart() {
+  }
+
+  function handleTouchStart() {
     isTouching = true;
     if (paintable && onPaint) {
       onPaint(element.row, element.col);
