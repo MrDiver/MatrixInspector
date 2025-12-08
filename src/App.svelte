@@ -32,6 +32,7 @@
   let pythonEditorOpen = false;
   let pythonResult = null;
   let showShortcutModal = false;
+  let isFullscreen = false;
 
   // Sync Python result into store (including clearing when null)
   $: pythonMatrix.set(pythonResult);
@@ -41,24 +42,80 @@
   let generateSymmetric = false;
   let showCSR = true;
 
+  // Keyboard shortcuts configuration
+  const shortcuts = [
+    {
+      category: 'Paint Mode',
+      shortcuts: [
+        {
+          key: '1',
+          description: 'Toggle Paint Identity',
+          modifiers: { ctrl: false, shift: false, alt: false },
+          action: () => paintIdentityMode.update(v => !v)
+        },
+        {
+          key: 's',
+          description: 'Toggle Symmetric',
+          modifiers: { ctrl: false, shift: false, alt: false },
+          action: () => { symmetricValue = !symmetricValue; }
+        },
+        {
+          key: 'p',
+          description: 'Toggle Symmetric Pattern',
+          modifiers: { ctrl: false, shift: false, alt: false },
+          action: () => { generateSymmetric = !generateSymmetric; }
+        }
+      ]
+    },
+    {
+      category: 'View',
+      shortcuts: [
+        {
+          key: 'f',
+          description: 'Toggle Fullscreen Mode',
+          modifiers: { ctrl: false, shift: false, alt: false },
+          action: () => { isFullscreen = !isFullscreen; }
+        }
+      ]
+    },
+    {
+      category: 'Help',
+      shortcuts: [
+        {
+          key: '?',
+          description: 'Show This Menu',
+          modifiers: { ctrl: false, shift: false, alt: false },
+          action: () => { showShortcutModal = !showShortcutModal; }
+        }
+      ]
+    }
+  ];
+
   function handleKeyPress(e) {
     // Don't trigger shortcuts if user is typing in an input
     if (e.target.matches('input[type="text"], textarea, input[type="number"]')) {
       return;
     }
 
-    if (e.key === '1') {
-      e.preventDefault();
-      paintIdentityMode.update(v => !v);
-    } else if (e.key === 's' || e.key === 'S') {
-      e.preventDefault();
-      symmetricValue = !symmetricValue;
-    } else if (e.key === 'p' || e.key === 'P') {
-      e.preventDefault();
-      generateSymmetric = !generateSymmetric;
-    } else if (e.key === '?') {
-      e.preventDefault();
-      showShortcutModal = !showShortcutModal;
+    const key = e.key.toLowerCase();
+    const modifiers = {
+      ctrl: e.ctrlKey || e.metaKey,
+      shift: e.shiftKey,
+      alt: e.altKey
+    };
+
+    // Find matching shortcut
+    for (const category of shortcuts) {
+      for (const shortcut of category.shortcuts) {
+        if (shortcut.key === key &&
+            shortcut.modifiers.ctrl === modifiers.ctrl &&
+            shortcut.modifiers.shift === modifiers.shift &&
+            shortcut.modifiers.alt === modifiers.alt) {
+          e.preventDefault();
+          shortcut.action();
+          return;
+        }
+      }
     }
   }
   
@@ -152,7 +209,8 @@
   }
 </script>
 
-<main>
+<main class:fullscreen={isFullscreen}>
+  {#if !isFullscreen}
   <header class="app-header">
     <div class="header-left">
       <div class="logo">
@@ -296,8 +354,9 @@
       </div>
     </div>
   </div>
+  {/if}
 
-  <div class="workspace">
+  <div class="workspace" class:fullscreen-workspace={isFullscreen}>
     <div class="screenshot-area" id="screenshot-area">
       {#if $parsedFormula}
         {@const baseMatrices = getBaseMatrices($parsedFormula)}
@@ -395,28 +454,22 @@
           </button>
         </div>
         <div class="modal-content">
-          <div class="shortcut-group">
-            <h3>Paint Mode</h3>
-            <div class="shortcut-item">
-              <kbd>1</kbd>
-              <span>Toggle Paint Identity</span>
+          {#each shortcuts as category}
+            <div class="shortcut-group">
+              <h3>{category.category}</h3>
+              {#each category.shortcuts as shortcut}
+                <div class="shortcut-item">
+                  <kbd>
+                    {#if shortcut.modifiers.ctrl}Ctrl+{/if}
+                    {#if shortcut.modifiers.shift}Shift+{/if}
+                    {#if shortcut.modifiers.alt}Alt+{/if}
+                    {shortcut.key.toUpperCase()}
+                  </kbd>
+                  <span>{shortcut.description}</span>
+                </div>
+              {/each}
             </div>
-            <div class="shortcut-item">
-              <kbd>S</kbd>
-              <span>Toggle Symmetric</span>
-            </div>
-            <div class="shortcut-item">
-              <kbd>P</kbd>
-              <span>Toggle Symmetric Pattern</span>
-            </div>
-          </div>
-          <div class="shortcut-group">
-            <h3>Help</h3>
-            <div class="shortcut-item">
-              <kbd>?</kbd>
-              <span>Show This Menu</span>
-            </div>
-          </div>
+          {/each}
         </div>
       </div>
     </div>
@@ -745,6 +798,30 @@
     background: none;
     padding: 12px;
     overflow-x: auto;
+  }
+
+  main.fullscreen {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .fullscreen-workspace {
+    padding: 40px;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+  }
+
+  .fullscreen-workspace .screenshot-area {
+    margin: 0;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .screenshot-area {
