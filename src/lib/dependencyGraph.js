@@ -24,7 +24,7 @@ export function resetIdCounter() {
 /**
  * Create a matrix element with a unique ID
  */
-export function createElement(matrixName, row, col, value = 0, color = null) {
+export function createElement(matrixName, row, col, value = 0, color = null, isIdentity = false) {
   return {
     id: generateId(),
     matrixName,
@@ -32,6 +32,7 @@ export function createElement(matrixName, row, col, value = 0, color = null) {
     col,
     value,
     color,
+    isIdentity, // Flag: true if this element should be treated as identity in multiplication
     dependencies: [], // IDs of elements this depends on
     dependents: []    // IDs of elements that depend on this
   };
@@ -281,16 +282,36 @@ export function multiplyMatrices(graph, leftMatrixName, rightMatrixName, resultM
           // Add contribution
           sum += leftElem.value * rightElem.value;
           
-          // Track direct dependencies
-          contributors.add(leftElem.id);
-          contributors.add(rightElem.id);
+          // Handle identity elements: pass through the other element's dependencies
+          const leftIsIdentity = leftElem.isIdentity;
+          const rightIsIdentity = rightElem.isIdentity;
           
-          // Also add transitive dependencies
-          for (const depId of leftElem.dependencies) {
-            contributors.add(depId);
-          }
-          for (const depId of rightElem.dependencies) {
-            contributors.add(depId);
+          if (leftIsIdentity && rightIsIdentity) {
+            // Both are identity: no dependencies to add
+            // (identity * identity = identity, which is identity)
+          } else if (leftIsIdentity) {
+            // Left is identity: only add right element's dependencies
+            contributors.add(rightElem.id);
+            for (const depId of rightElem.dependencies) {
+              contributors.add(depId);
+            }
+          } else if (rightIsIdentity) {
+            // Right is identity: only add left element's dependencies
+            contributors.add(leftElem.id);
+            for (const depId of leftElem.dependencies) {
+              contributors.add(depId);
+            }
+          } else {
+            // Neither is identity: add both elements and their dependencies (original behavior)
+            contributors.add(leftElem.id);
+            contributors.add(rightElem.id);
+            
+            for (const depId of leftElem.dependencies) {
+              contributors.add(depId);
+            }
+            for (const depId of rightElem.dependencies) {
+              contributors.add(depId);
+            }
           }
         }
       }

@@ -2,6 +2,18 @@
 export const transposeState = writable({});
 
 /**
+ * Value types for matrix cells
+ * EMPTY: 0 - cell is empty
+ * IDENTITY: 1 - cell is identity element (value=1, no color)
+ * COLORED: 2 - cell has a non-1 value with color
+ */
+export const VALUE_TYPES = {
+  EMPTY: 0,
+  IDENTITY: 1,
+  COLORED: 2
+};
+
+/**
  * Svelte stores for matrix inspector state
  */
 import { writable, derived, get } from 'svelte/store';
@@ -48,6 +60,9 @@ export const PRESET_COLORS = [
 ];
 
 export const currentColor = writable(COLOR_PALETTE.accent1);
+
+// Paint identity mode: when enabled, painting adds identity flag to colored cells
+export const paintIdentityMode = writable(false);
 
 // Main dependency graph
 export const graph = writable(new DependencyGraph());
@@ -202,11 +217,19 @@ export function toggleElement(matrixName, row, col, color) {
     const element = g.getElementAt(matrixName, row, col);
     if (!element) return g;
     
-    // Toggle value
+    // Get current paint identity mode
+    let paintIdentity;
+    paintIdentityMode.subscribe(m => paintIdentity = m)();
+    
+    // Toggle value to 0 or 1, always use color for visualization
     const newValue = element.value ? 0 : 1;
-    const newColor = newValue ? color : null;
+    const newColor = newValue ? color : null; // Always use color when value is set
+    const newIsIdentity = newValue && paintIdentity; // Set isIdentity flag if paint identity mode is on
     
     g.updateElement(matrixName, row, col, newValue, newColor);
+    
+    // Update the isIdentity flag
+    element.isIdentity = newIsIdentity;
     
     // If symmetric mode is enabled
     let currentSym;
@@ -221,7 +244,11 @@ export function toggleElement(matrixName, row, col, color) {
         
         // Only apply symmetric for square matrices and if col,row is within bounds
         if (numRows === numCols && row !== col && col < numRows && row < numCols) {
-          g.updateElement(matrixName, col, row, newValue, newColor);
+          const symElement = g.getElementAt(matrixName, col, row);
+          if (symElement) {
+            g.updateElement(matrixName, col, row, newValue, newColor);
+            symElement.isIdentity = newIsIdentity;
+          }
         }
       }
     }

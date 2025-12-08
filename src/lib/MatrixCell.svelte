@@ -10,7 +10,25 @@
   
   $: isHighlighted = $highlightedElements.has(element.id);
   $: hasValue = element.value !== 0;
+  $: isIdentity = element.isIdentity === true;
   $: shouldDim = anyHighlighted && !isHighlighted;
+  
+  // Determine identity badge color based on cell color brightness
+  $: identityBadgeColor = (() => {
+    if (!element.color) return 'inherit'; // Use CSS default if no color
+    
+    // Parse hex color and calculate brightness
+    const hex = element.color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calculate luminance using relative luminance formula
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // If color is dark (luminance < 0.5), use white text, otherwise use dark text
+    return luminance < 0.5 ? 'white' : 'rgba(40, 40, 40, 0.8)';
+  })();
   
   let isTouching = false;
   
@@ -89,6 +107,7 @@
   class:highlight={isHighlighted}
   class:miniblocks={showMiniBlocks && hasValue}
   class:dimmed={shouldDim}
+  class:identity={isIdentity}
   data-has-value={hasValue}
   data-id={element.id}
   on:click={handleClick}
@@ -102,6 +121,7 @@
     ? (showMiniBlocks ? 'var(--matrix-cell-bg)' : (element.color || 'var(--color-primary)'))
     : 'var(--matrix-cell-bg)'}
   style:--cell-highlight={hasValue ? (element.color || 'var(--color-primary)') : 'var(--color-rose)'}
+  style:--identity-badge-color={identityBadgeColor}
   role={paintable ? 'button' : 'cell'}
   tabindex={paintable ? 0 : -1}
 >
@@ -222,5 +242,53 @@
 
   :global(html.dark) .mini {
     border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Identity element visual indicator */
+  td.identity {
+    border: 1px dashed rgba(150, 150, 150, 0.4);
+    opacity: 0.85;
+    position: relative;
+  }
+
+  :global(html.dark) td.identity {
+    border-color: rgba(200, 200, 200, 0.3);
+  }
+
+  /* Display "1" badge for identity elements - centered */
+  td.identity::before {
+    content: '1';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--identity-badge-color, rgba(60, 60, 60, 0.5));
+    line-height: 1;
+    pointer-events: none;
+    z-index: 2;
+    text-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+  }
+
+  :global(html.dark) td.identity::before {
+    color: var(--identity-badge-color, rgba(200, 200, 200, 0.6));
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Dot indicator */
+  td.identity::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 3px;
+    height: 3px;
+    background: rgba(100, 100, 100, 0.6);
+    border-radius: 50%;
+  }
+
+  :global(html.dark) td.identity::after {
+    background: rgba(180, 180, 180, 0.5);
   }
 </style>

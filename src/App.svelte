@@ -8,7 +8,7 @@
   import PythonEditor from './lib/PythonEditor.svelte';
   import PythonMatrixView from './lib/PythonMatrixView.svelte';
   import FormulaToolbar from './lib/FormulaToolbar.svelte';
-  import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, setMatrixDimensions, clearPersistentSelections, persistentSelections } from './lib/stores';
+  import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, setMatrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode } from './lib/stores';
   import { getBaseMatrices, getAllMatrixReferences } from './lib/formulaParser';
   import { darkMode } from './lib/themeStore';
   import './sw-registration.js';
@@ -239,6 +239,10 @@
       <div class="toolbar-section">
         <span class="section-label">🎨 Paint Mode</span>
         <ColorPicker />
+        <label class="checkbox-label">
+          <input type="checkbox" bind:checked={$paintIdentityMode} />
+          <span>Paint Identity</span>
+        </label>
         <label class="checkbox-label">
           <input type="checkbox" bind:checked={symmetricValue} />
           <span>Symmetric</span>
