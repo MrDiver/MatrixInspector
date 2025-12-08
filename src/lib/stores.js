@@ -270,6 +270,10 @@ export function generateRandomMatrix(matrixName, sparsity, symmetricPattern = fa
   
   const actualColor = color || PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
   
+  // Get current paint identity mode
+  let paintIdentity;
+  paintIdentityMode.subscribe(m => paintIdentity = m)();
+  
   graph.update(g => {
     // Get matrix dimensions
     const matrixIds = g.matrices[matrixName];
@@ -281,7 +285,7 @@ export function generateRandomMatrix(matrixName, sparsity, symmetricPattern = fa
     // Clear existing values in target matrix
     for (let i = 0; i < numRows; i++) {
       for (let j = 0; j < numCols; j++) {
-        g.updateElement(matrixName, i, j, 0, null);
+        g.updateElement(matrixName, i, j, 0, null, false);
       }
     }
     
@@ -292,11 +296,11 @@ export function generateRandomMatrix(matrixName, sparsity, symmetricPattern = fa
         if (symmetricPattern && j < i) continue;
         
         if (Math.random() < sparsity) {
-          g.updateElement(matrixName, i, j, 1, actualColor);
+          g.updateElement(matrixName, i, j, 1, actualColor, paintIdentity);
           
           // If symmetric, mirror across diagonal
           if (symmetricPattern && i !== j) {
-            g.updateElement(matrixName, j, i, 1, actualColor);
+            g.updateElement(matrixName, j, i, 1, actualColor, paintIdentity);
           }
         }
       }
@@ -314,6 +318,10 @@ export function generateRandomMatrix(matrixName, sparsity, symmetricPattern = fa
  */
 export function fillDiagonal(matrixName, color = null) {
   const actualColor = color || PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
+  
+  // Get current paint identity mode
+  let paintIdentity;
+  paintIdentityMode.subscribe(m => paintIdentity = m)();
 
   graph.update(g => {
     const matrixIds = g.matrices[matrixName];
@@ -324,7 +332,7 @@ export function fillDiagonal(matrixName, color = null) {
     const diag = Math.min(numRows, numCols);
 
     for (let i = 0; i < diag; i++) {
-      g.updateElement(matrixName, i, i, 1, actualColor);
+      g.updateElement(matrixName, i, i, 1, actualColor, paintIdentity);
     }
 
     return g;

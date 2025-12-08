@@ -8,6 +8,7 @@
   import PythonEditor from './lib/PythonEditor.svelte';
   import PythonMatrixView from './lib/PythonMatrixView.svelte';
   import FormulaToolbar from './lib/FormulaToolbar.svelte';
+  import ToggleIcon from './lib/ToggleIcon.svelte';
   import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, setMatrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode } from './lib/stores';
   import { getBaseMatrices, getAllMatrixReferences } from './lib/formulaParser';
   import { darkMode } from './lib/themeStore';
@@ -28,16 +29,38 @@
     }
 
   let notificationComponent;
-    let pythonEditorOpen = false;
-    let pythonResult = null;
-  
-    // Sync Python result into store (including clearing when null)
-    $: pythonMatrix.set(pythonResult);
-  
+  let pythonEditorOpen = false;
+  let pythonResult = null;
+  let showShortcutModal = false;
+
+  // Sync Python result into store (including clearing when null)
+  $: pythonMatrix.set(pythonResult);
+
   let symmetricValue = false;
   let sparsityValue = 0.3;
   let generateSymmetric = false;
   let showCSR = true;
+
+  function handleKeyPress(e) {
+    // Don't trigger shortcuts if user is typing in an input
+    if (e.target.matches('input[type="text"], textarea, input[type="number"]')) {
+      return;
+    }
+
+    if (e.key === '1') {
+      e.preventDefault();
+      paintIdentityMode.update(v => !v);
+    } else if (e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      symmetricValue = !symmetricValue;
+    } else if (e.key === 'p' || e.key === 'P') {
+      e.preventDefault();
+      generateSymmetric = !generateSymmetric;
+    } else if (e.key === '?') {
+      e.preventDefault();
+      showShortcutModal = !showShortcutModal;
+    }
+  }
   
   onMount(() => {
     // Initialize formula-driven matrices
@@ -45,6 +68,9 @@
     if (baseMatrices.length > 0) {
       initializeFormulaMatrices(baseMatrices);
     }
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
   });
   
   // Sync symmetric checkbox to store
@@ -186,6 +212,12 @@
           <path d="M9.5 2c-1.82 0-3.53.5-5 1.35C2.99 4.34 2 6.05 2 8c0 .83.09 1.64.26 2.4L2 20h6l.74-10h6.52L16 20h6l-.26-9.6c.17-.76.26-1.57.26-2.4 0-1.95-.99-3.66-2.5-4.65C18.03 2.5 16.32 2 14.5 2z"/>
         </svg>
       </button>
+      <button on:click={() => showShortcutModal = !showShortcutModal} class="icon-btn" title="Keyboard Shortcuts (?)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4m0 -2v.01"/>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -239,13 +271,13 @@
       <div class="toolbar-section">
         <span class="section-label">🎨 Paint Mode</span>
         <ColorPicker />
-        <label class="checkbox-label">
+        <label class="toggle-button" title="Paint Identity">
           <input type="checkbox" bind:checked={$paintIdentityMode} />
-          <span>Paint Identity</span>
+          <span><ToggleIcon type="identity" /></span>
         </label>
-        <label class="checkbox-label">
+        <label class="toggle-button" title="Symmetric">
           <input type="checkbox" bind:checked={symmetricValue} />
-          <span>Symmetric</span>
+          <span><ToggleIcon type="symmetric" /></span>
         </label>
       </div>
     </div>
@@ -257,9 +289,9 @@
           <span>Sparsity</span>
           <input type="number" min="0" max="1" step="0.05" bind:value={sparsityValue}/>
         </label>
-        <label class="checkbox-label">
+        <label class="toggle-button" title="Symmetric Pattern">
           <input type="checkbox" bind:checked={generateSymmetric} />
-          <span>Sym Pattern</span>
+          <span><ToggleIcon type="sympattern" /></span>
         </label>
       </div>
     </div>
@@ -348,6 +380,47 @@
   <Notification bind:this={notificationComponent} />
   <Gallery on:notify={(e) => notificationComponent?.show(e.detail.message, e.detail.type)} />
   <PythonEditor bind:isOpen={pythonEditorOpen} bind:pythonResult />
+
+  <!-- Keyboard Shortcuts Modal -->
+  {#if showShortcutModal}
+    <div class="modal-overlay" on:click={() => showShortcutModal = false}>
+      <div class="modal" on:click|stopPropagation>
+        <div class="modal-header">
+          <h2>Keyboard Shortcuts</h2>
+          <button on:click={() => showShortcutModal = false} class="close-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-content">
+          <div class="shortcut-group">
+            <h3>Paint Mode</h3>
+            <div class="shortcut-item">
+              <kbd>1</kbd>
+              <span>Toggle Paint Identity</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>S</kbd>
+              <span>Toggle Symmetric</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>P</kbd>
+              <span>Toggle Symmetric Pattern</span>
+            </div>
+          </div>
+          <div class="shortcut-group">
+            <h3>Help</h3>
+            <div class="shortcut-item">
+              <kbd>?</kbd>
+              <span>Show This Menu</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {/if}
 </main>
 
 <style>
@@ -584,6 +657,61 @@
     gap: 6px;
     touch-action: manipulation;
     white-space: nowrap;
+  }
+
+  .toggle-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .toggle-button input[type="checkbox"] {
+    display: none;
+  }
+
+  .toggle-button span {
+    padding: 2px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    touch-action: manipulation;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .toggle-button span :global(svg) {
+    width: 22px;
+    height: 22px;
+    color: currentColor;
+  }
+
+  .toggle-button input[type="checkbox"]:checked + span {
+    background: var(--primary-blue);
+    color: var(--text-primary);
+    border-color: var(--primary-blue);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    font-size: 16px;
+  }
+
+  .toggle-button:hover span {
+    border-color: var(--primary-blue);
+    background: var(--bg-hover);
+  }
+
+  .toggle-button input[type="checkbox"]:checked + span:hover {
+    background: var(--primary-blue);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
   }
 
   .btn-secondary {
@@ -865,6 +993,111 @@
 
   .clear-btn:active {
     transform: translateY(0);
+  }
+
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+  }
+
+  .modal {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .close-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .modal-content {
+    padding: 20px;
+  }
+
+  .shortcut-group {
+    margin-bottom: 24px;
+  }
+
+  .shortcut-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .shortcut-group h3 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .shortcut-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .shortcut-item kbd {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-primary);
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .shortcut-item span {
+    color: var(--text-primary);
+    font-size: 14px;
   }
 </style>
 

@@ -159,11 +159,12 @@ export class DependencyGraph {
   /**
    * Update an element's value and color
    */
-  updateElement(matrixName, row, col, value, color) {
+  updateElement(matrixName, row, col, value, color, isIdentity = false) {
     const element = this.getElementAt(matrixName, row, col);
     if (element) {
       element.value = value;
       element.color = color;
+      element.isIdentity = isIdentity;
     }
   }
 
