@@ -76,6 +76,9 @@ export const persistentSelections = writable(new Set());
 // Source cells selected in O matrix (to recompute persistentSelections robustly)
 export const persistentSelectionSources = writable(new Set());
 
+// Track if user is currently dragging to select multiple cells
+export const draggingMultiSelect = writable(false);
+
 function computePersistentHighlights(graphInstance, sources) {
   const union = new Set();
   if (!graphInstance || !sources) return union;

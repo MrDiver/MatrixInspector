@@ -8,6 +8,8 @@
   export let showMiniBlocks = false;
   export let grayBackground = false;
   
+  let isDragging = false;
+
   $: matrixData = getMatrixData(matrixName);
 
   // Format label with italic styling for matrix variables
@@ -76,6 +78,7 @@
                 {paintable}
                 {showMiniBlocks}
                 {anyHighlighted}
+                bind:isDragging
                 onPaint={handlePaint}
                 matrixName={matrixName}
               />

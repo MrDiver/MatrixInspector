@@ -8,6 +8,7 @@
   export let anyHighlighted = false;
   export let onPaint = null;
   export let matrixName = ''; // Track which matrix this cell belongs to
+  export let isDragging = false; // Bound from parent for shared drag state
   
   $: isHighlighted = $highlightedElements.has(element.id);
   $: hasValue = element.value !== 0;
@@ -45,6 +46,28 @@
       event.preventDefault();
       togglePersistentSelection(element.id);
     }
+  }
+  
+  function handleMouseDown(event) {
+    // Only start drag if Ctrl/Cmd is pressed and we're on a multi-select enabled matrix
+    if ((event.ctrlKey || event.metaKey) && hasValue && (showMiniBlocks || matrixName === 'O')) {
+      isDragging = true;
+      event.preventDefault();
+    }
+  }
+  
+  function handleMouseEnter(event) {
+    // If dragging, add this cell to selection (only if not already selected)
+    if (isDragging && hasValue && (event.ctrlKey || event.metaKey) && (showMiniBlocks || matrixName === 'O')) {
+      // Only toggle if not already in persistent selections
+      if (!$persistentSelections.has(element.id)) {
+        togglePersistentSelection(element.id);
+      }
+    }
+  }
+  
+  function handleMouseUp() {
+    isDragging = false;
   }
   
   function handleMouseOver() {
@@ -120,6 +143,9 @@
   data-has-value={hasValue}
   data-id={element.id}
   on:click={handleClick}
+  on:mousedown={handleMouseDown}
+  on:mouseenter={handleMouseEnter}
+  on:mouseup={handleMouseUp}
   on:mouseover={handleMouseOver}
   on:mouseleave={handleMouseLeave}
   on:touchstart={handleTouchStart}
