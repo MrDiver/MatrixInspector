@@ -40,8 +40,8 @@
       return;
     }
     
-    // For O matrix: support multi-select with Ctrl/Cmd+Click
-    if (matrixName === 'O' && hasValue && (event.ctrlKey || event.metaKey)) {
+    // Support multi-select with Ctrl/Cmd+Click on any matrix with miniBlocks or O matrix
+    if (hasValue && (event.ctrlKey || event.metaKey) && (showMiniBlocks || matrixName === 'O')) {
       event.preventDefault();
       togglePersistentSelection(element.id);
     }
@@ -52,9 +52,8 @@
       if ($persistentSelectionSources.size > 0) {
         return; // Preserve persistent highlights during hover
       }
-      // In O matrix: preserve persistent selections while hovering
-      if (matrixName === 'O') {
-        // Add hover highlight to persistent selections temporarily
+      // For matrices with multi-select: preserve persistent selections while hovering
+      if (showMiniBlocks || matrixName === 'O') {
         const hasPersistent = $persistentSelections.size > 0;
         if (!hasPersistent) {
           // Only use normal hover if no persistent selections
@@ -73,8 +72,8 @@
         highlightedElements.set(new Set($persistentSelections));
         return;
       }
-      if (matrixName === 'O') {
-        // In O matrix: restore persistent selections
+      // For matrices with multi-select: restore persistent selections
+      if (showMiniBlocks || matrixName === 'O') {
         highlightedElements.set(new Set($persistentSelections));
       } else {
         // Other matrices: clear all highlights

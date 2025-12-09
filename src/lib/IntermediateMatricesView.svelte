@@ -18,8 +18,8 @@
 <div class="intermediate-matrices">
   {#if intermediateMatrices.length > 0}
     <div class="section-header">
-      <h3>Intermediate Results</h3>
-      <p>Results of intermediate computations</p>
+      <h3>Results</h3>
+      <p>Intermediate and final computation results</p>
     </div>
     
     <div class="matrix-row">
@@ -40,7 +40,6 @@
 <style>
   .intermediate-matrices {
     padding: 24px 16px;
-    border-bottom: 1px solid var(--border-color);
   }
 
   .section-header {

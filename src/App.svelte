@@ -100,6 +100,13 @@
       alt: e.altKey
     };
 
+    // Handle ESC or D to clear persistent selections
+    if ((key === 'escape' || key === 'd') && $persistentSelections.size > 0) {
+      e.preventDefault();
+      clearPersistentSelections();
+      return;
+    }
+
     // Find matching shortcut
     for (const category of shortcuts) {
       for (const shortcut of category.shortcuts) {
@@ -380,43 +387,28 @@
             <!-- Row 1: Tracked Instances for formula tracking (e.g., A_0, A_1 for A*A*A) -->
             <TrackedInstancesView />
             
-            <!-- Row 1.7: Intermediate Results -->
+            <!-- Row 1.7: Intermediate Results / Final Results -->
             <IntermediateMatricesView />
-            
-            <!-- Row 2: Result Matrix -->
-            <div class="matrix-row result-row">
-              <div class="matrix-cell">
-                <div class="matrix-with-controls">
-                  <MatrixView
-                    matrixName="O"
-                    label="O = {$parsedFormula.raw}"
-                    showMiniBlocks={true}
-                    grayBackground={true}
-                  />
-                  {#if $persistentSelections.size > 0}
-                    <div class="selection-controls">
-                      <button 
-                        class="clear-btn"
-                        on:click={clearPersistentSelections}
-                        title="Clear pattern selection (Ctrl+Click cells to multi-select)"
-                      >
-                        Clear Selection ({$persistentSelections.size})
-                      </button>
-                    </div>
-                  {/if}
-                </div>
-              </div>
-              {#if $pythonMatrix}
-                <div class="matrix-cell">
-                  <PythonMatrixView label="O(py)" />
-                </div>
-              {/if}
-            </div>
           </div>
         {/if}
       </div>
     </div>
   </div>
+
+  <!-- Floating Clear Selection Button -->
+  {#if $persistentSelections.size > 0}
+    <button 
+      class="floating-clear-btn"
+      on:click={clearPersistentSelections}
+      title="Clear selection (Press D or ESC)"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+      <span>{$persistentSelections.size}</span>
+    </button>
+  {/if}
   
   {#if showCSR && $parsedFormula}
     {@const baseMatrices = getBaseMatrices($parsedFormula)}
@@ -1048,27 +1040,61 @@
     width: 100%;
   }
 
-  .clear-btn {
-    padding: 8px 16px;
+  /* Floating Clear Selection Button */
+  .floating-clear-btn {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
     background: var(--color-rose);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 50px;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(250, 112, 154, 0.25);
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(250, 112, 154, 0.4);
+    z-index: 100;
+    animation: float-in 0.3s ease-out, glow 2s ease-in-out infinite;
   }
 
-  .clear-btn:hover {
+  .floating-clear-btn:hover {
     background: #e63f7d;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(250, 112, 154, 0.35);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(250, 112, 154, 0.5);
   }
 
-  .clear-btn:active {
-    transform: translateY(0);
+  .floating-clear-btn:active {
+    transform: translateY(0) scale(1);
+  }
+
+  .floating-clear-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  @keyframes float-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes glow {
+    0%, 100% {
+      box-shadow: 0 4px 16px rgba(250, 112, 154, 0.4);
+    }
+    50% {
+      box-shadow: 0 4px 24px rgba(250, 112, 154, 0.6), 0 0 40px rgba(250, 112, 154, 0.3);
+    }
   }
 
   /* Modal Styles */
