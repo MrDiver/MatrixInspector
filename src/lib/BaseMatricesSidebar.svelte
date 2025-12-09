@@ -1,15 +1,17 @@
 <script>
   /**
    * BaseMatricesSidebar - Display and edit base matrices in a sidebar
-   * Shows S, K, etc. with editing controls (random fill, diagonal fill, transpose)
+   * Shows S, K, etc. with editing controls (random fill, diagonal fill, transpose, size)
    */
   import MatrixView from './MatrixView.svelte';
-  import { parsedFormula, currentColor, transposeState } from './stores';
+  import { parsedFormula, currentColor, transposeState, matrixDimensions, setMatrixDimensions } from './stores';
   import { getBaseMatrices } from './formulaParser';
   import { generateRandomMatrix, fillDiagonal } from './stores';
 
   let baseMatrices = [];
   let transpose = {};
+  let dimensions = {};
+  let resizing = null; // {matrixName, startX, startY, startRows, startCols}
 
   // Update base matrices when formula changes
   $: if ($parsedFormula) {
@@ -25,8 +27,57 @@
   // Watch transpose state
   $: transpose = $transposeState;
 
+  // Watch matrix dimensions
+  $: dimensions = $matrixDimensions;
+
   function toggleTranspose(matrix) {
     transposeState.update(state => ({ ...state, [matrix]: !state[matrix] }));
+  }
+
+  function handleDimensionInput(matrixName, key, value) {
+    const dims = $matrixDimensions[matrixName] || { rows: 5, cols: 5 };
+    const next = { ...dims, [key]: Number(value) };
+    setMatrixDimensions(matrixName, next.rows, next.cols);
+  }
+
+  function startResize(e, matrixName) {
+    if (e.button !== 0) return; // Only left click
+    e.preventDefault();
+    
+    const dims = $matrixDimensions[matrixName] || { rows: 5, cols: 5 };
+    resizing = {
+      matrixName,
+      startX: e.clientX,
+      startY: e.clientY,
+      startRows: dims.rows,
+      startCols: dims.cols
+    };
+
+    function handleMouseMove(moveEvent) {
+      if (!resizing) return;
+      
+      // Calculate how many cells to add (each ~20px)
+      const deltaX = moveEvent.clientX - resizing.startX;
+      const deltaY = moveEvent.clientY - resizing.startY;
+      
+      // Sensitivity: ~25px per cell change
+      const colDelta = Math.round(deltaX / 25);
+      const rowDelta = Math.round(deltaY / 25);
+      
+      const newCols = Math.max(1, Math.min(50, resizing.startCols + colDelta));
+      const newRows = Math.max(1, Math.min(50, resizing.startRows + rowDelta));
+      
+      setMatrixDimensions(resizing.matrixName, newRows, newCols);
+    }
+
+    function handleMouseUp() {
+      resizing = null;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    }
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   }
 </script>
 
@@ -46,6 +97,47 @@
               paintable={true}
               grayBackground={false}
             />
+            <!-- Draggable resize handle in bottom-right corner -->
+            <div 
+              class="resize-handle" 
+              role="button"
+              tabindex="0"
+              on:mousedown={(e) => startResize(e, matrixName)}
+              title="Drag to resize matrix"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <!-- Grid pattern: 2x2 cubes in each direction -->
+                <circle cx="6" cy="6" r="1.5" fill="currentColor"/>
+                <circle cx="12" cy="6" r="1.5" fill="currentColor"/>
+                <circle cx="18" cy="6" r="1.5" fill="currentColor"/>
+                <circle cx="6" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="18" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="6" cy="18" r="1.5" fill="currentColor"/>
+                <circle cx="12" cy="18" r="1.5" fill="currentColor"/>
+                <circle cx="18" cy="18" r="1.5" fill="currentColor"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="matrix-size">
+            <label class="size-input-group">
+              <input
+                type="number"
+                min="1"
+                max="50"
+                value={dimensions[matrixName]?.rows || 5}
+                on:change={(e) => { const el = e.target; if (el instanceof HTMLInputElement) handleDimensionInput(matrixName, 'rows', el.value); }}
+              />
+              <span class="size-sep">×</span>
+              <input
+                type="number"
+                min="1"
+                max="50"
+                value={dimensions[matrixName]?.cols || 5}
+                on:change={(e) => { const el = e.target; if (el instanceof HTMLInputElement) handleDimensionInput(matrixName, 'cols', el.value); }}
+              />
+            </label>
           </div>
 
           <div class="matrix-controls">
@@ -114,7 +206,7 @@
     max-height: calc(100vh - 100px);
     overflow-y: auto;
     min-width: 240px;
-    width: 240px;
+    width: auto;
   }
 
   .sidebar-header {
@@ -154,12 +246,86 @@
     border-radius: 8px;
     padding: 0.5rem;
     background: var(--bg-secondary);
+    position: relative;
+  }
+
+  .resize-handle {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 4px;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: var(--accent-color, #4CAF50);
+    transition: all 0.2s ease;
+  }
+
+  .resize-handle:hover {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: rgba(76, 175, 80, 0.6);
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+  }
+
+  .resize-handle:active {
+    cursor: grabbing;
+    background: rgba(76, 175, 80, 0.3);
+  }
+
+  .resize-handle svg {
+    width: 16px;
+    height: 16px;
   }
 
   .matrix-controls {
     display: flex;
     gap: 0.5rem;
     justify-content: center;
+  }
+
+  .matrix-size {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .size-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--input-bg, rgba(0, 0, 0, 0.05));
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+    font-size: 0.85rem;
+  }
+
+  .size-input-group input {
+    width: 40px;
+    padding: 0.3rem 0.4rem;
+    border: none;
+    border-radius: 3px;
+    background: var(--bg-secondary, white);
+    color: var(--text-primary, #333);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .size-input-group input:focus {
+    outline: none;
+    background: white;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  }
+
+  .size-sep {
+    color: var(--text-secondary, #666);
+    font-weight: 500;
+    font-size: 0.9rem;
   }
 
   .control-btn {

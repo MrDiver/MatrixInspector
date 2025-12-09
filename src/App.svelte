@@ -12,7 +12,7 @@
   import TrackedInstancesView from './lib/TrackedInstancesView.svelte';
   import BaseMatricesSidebar from './lib/BaseMatricesSidebar.svelte';
   import ToggleIcon from './lib/ToggleIcon.svelte';
-  import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, setMatrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode } from './lib/stores';
+  import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode } from './lib/stores';
   import { getBaseMatrices, getAllMatrixReferences } from './lib/formulaParser';
   import { darkMode } from './lib/themeStore';
   import './sw-registration.js';
@@ -142,12 +142,6 @@
     if (baseMatrices.length > 0) {
       initializeFormulaMatrices(baseMatrices);
     }
-  }
-
-  function handleDimensionInput(matrixName, key, value) {
-    const dims = $matrixDimensions[matrixName] || { rows: 5, cols: 5 };
-    const next = { ...dims, [key]: Number(value) };
-    setMatrixDimensions(matrixName, next.rows, next.cols);
   }
   
   function handleFillDiagonal(matrixName) {
@@ -306,31 +300,7 @@
     <div class="toolbar-row">
       <div class="toolbar-section">
         <span class="section-label">📐 Matrix Dimensions</span>
-        {#if $parsedFormula}
-          {@const baseMatrices = getBaseMatrices($parsedFormula)}
-          {#each baseMatrices as matrixName}
-            <div class="dimension-spinner">
-              <label class="input-group">
-                <span>{matrixName}</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={$matrixDimensions[matrixName]?.rows || 5}
-                  on:change={(e) => { const el = e.target; if (el instanceof HTMLInputElement) handleDimensionInput(matrixName, 'rows', el.value); }}
-                />
-                <span class="x">×</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={$matrixDimensions[matrixName]?.cols || 5}
-                  on:change={(e) => { const el = e.target; if (el instanceof HTMLInputElement) handleDimensionInput(matrixName, 'cols', el.value); }}
-                />
-              </label>
-            </div>
-          {/each}
-        {/if}
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Controls moved to sidebar</p>
       </div>
 
       <div class="toolbar-section">
