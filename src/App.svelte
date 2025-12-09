@@ -8,18 +8,14 @@
   import PythonEditor from './lib/PythonEditor.svelte';
   import PythonMatrixView from './lib/PythonMatrixView.svelte';
   import FormulaToolbar from './lib/FormulaToolbar.svelte';
+  import IntermediateMatricesView from './lib/IntermediateMatricesView.svelte';
+  import TrackedInstancesView from './lib/TrackedInstancesView.svelte';
+  import BaseMatricesSidebar from './lib/BaseMatricesSidebar.svelte';
   import ToggleIcon from './lib/ToggleIcon.svelte';
   import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, setMatrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode } from './lib/stores';
   import { getBaseMatrices, getAllMatrixReferences } from './lib/formulaParser';
   import { darkMode } from './lib/themeStore';
   import './sw-registration.js';
-    // Transpose state for each matrix
-    $: transpose = $transposeState;
-
-    function toggleTranspose(matrix) {
-      transposeState.update(state => ({ ...state, [matrix]: !state[matrix] }));
-    }
-
     // Initialize formula matrices when formula changes (regardless of modal state)
     $: if ($parsedFormula) {
       const baseMatrices = getBaseMatrices($parsedFormula);
@@ -373,72 +369,52 @@
   {/if}
 
   <div class="workspace" class:fullscreen-workspace={isFullscreen}>
-    <div class="screenshot-area" id="screenshot-area">
-      {#if $parsedFormula}
-        {@const baseMatrices = getBaseMatrices($parsedFormula)}
-        {@const allRefs = getAllMatrixReferences($parsedFormula)}
-        
-        <div class="matrix-grid formula-layout">
-          <!-- Row 1: Formula matrices in order (including transposes) -->
-          <div class="matrix-row">
-            {#each allRefs as ref}
+    {#if $parsedFormula}
+      <BaseMatricesSidebar />
+    {/if}
+    
+    <div class="main-content">
+      <div class="screenshot-area" id="screenshot-area">
+        {#if $parsedFormula}
+          <div class="matrix-grid formula-layout">
+            <!-- Row 1: Tracked Instances for formula tracking (e.g., A_0, A_1 for A*A*A) -->
+            <TrackedInstancesView />
+            
+            <!-- Row 1.7: Intermediate Results -->
+            <IntermediateMatricesView />
+            
+            <!-- Row 2: Result Matrix -->
+            <div class="matrix-row result-row">
               <div class="matrix-cell">
-                <div class="matrix-with-actions">
+                <div class="matrix-with-controls">
                   <MatrixView
-                    matrixName={ref.transpose ? `${ref.name}_T` : ref.name}
-                    label={ref.displayName}
-                    paintable={ref.editable}
+                    matrixName="O"
+                    label="O = {$parsedFormula.raw}"
+                    showMiniBlocks={true}
                     grayBackground={true}
                   />
-                  {#if ref.editable}
-                    <div class="matrix-actions">
-                      <button class="matrix-icon-btn" class:active={transpose[ref.name]} on:click={() => toggleTranspose(ref.name)} title="Transpose {ref.name}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v-6a2 2 0 0 1 2-2h6"/><polyline points="10 9 16 9 16 15"/></svg>
-                      </button>
-                      <button class="matrix-icon-btn" on:click={() => { let color; currentColor.subscribe(c => color = c)(); generateRandomMatrix(ref.name, sparsityValue, generateSymmetric, color); }} title="Random Fill {ref.name}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
-                      </button>
-                      <button class="matrix-icon-btn" on:click={() => { let color; currentColor.subscribe(c => color = c)(); fillDiagonal(ref.name, color); }} title="Fill Diagonal {ref.name}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                  {#if $persistentSelections.size > 0}
+                    <div class="selection-controls">
+                      <button 
+                        class="clear-btn"
+                        on:click={clearPersistentSelections}
+                        title="Clear pattern selection (Ctrl+Click cells to multi-select)"
+                      >
+                        Clear Selection ({$persistentSelections.size})
                       </button>
                     </div>
                   {/if}
                 </div>
               </div>
-            {/each}
-          </div>
-          
-          <!-- Row 2: Result Matrix -->
-          <div class="matrix-row result-row">
-            <div class="matrix-cell">
-              <div class="matrix-with-controls">
-                <MatrixView
-                  matrixName="O"
-                  label="O = {$parsedFormula.raw}"
-                  showMiniBlocks={true}
-                  grayBackground={true}
-                />
-                {#if $persistentSelections.size > 0}
-                  <div class="selection-controls">
-                    <button 
-                      class="clear-btn"
-                      on:click={clearPersistentSelections}
-                      title="Clear pattern selection (Ctrl+Click cells to multi-select)"
-                    >
-                      Clear Selection ({$persistentSelections.size})
-                    </button>
-                  </div>
-                {/if}
-              </div>
+              {#if $pythonMatrix}
+                <div class="matrix-cell">
+                  <PythonMatrixView label="O(py)" />
+                </div>
+              {/if}
             </div>
-            {#if $pythonMatrix}
-              <div class="matrix-cell">
-                <PythonMatrixView label="O(py)" />
-              </div>
-            {/if}
           </div>
-        </div>
-      {/if}
+        {/if}
+      </div>
     </div>
   </div>
   
@@ -808,12 +784,20 @@
   
   .workspace {
     display: flex;
+    gap: 0;
+    flex: 1;
+    background: none;
+    overflow: hidden;
+  }
+
+  .main-content {
+    display: flex;
     justify-content: center;
     align-items: flex-start;
     flex: 1;
-    background: none;
     padding: 12px;
     overflow-x: auto;
+    overflow-y: auto;
   }
 
   main.fullscreen {
@@ -881,7 +865,6 @@
     flex-direction: row;
     gap: 16px;
     padding: 16px;
-    background: var(--bg-primary);
     border-top: 1px solid var(--border-color);
     flex-wrap: wrap;
     justify-content: center;

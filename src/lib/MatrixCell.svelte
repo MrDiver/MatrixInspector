@@ -1,5 +1,6 @@
 <script>
   import { highlightElement, togglePersistentSelection, clearHighlights, highlightedElements, persistentSelections, persistentSelectionSources } from '../lib/stores';
+  import MatrixCellContent from './MatrixCellContent.svelte';
   
   export let element;
   export let paintable = false;
@@ -134,16 +135,7 @@
   role={paintable ? 'button' : 'cell'}
   tabindex={paintable ? 0 : -1}
 >
-  {#if showMiniBlocks && miniBlockColors.length > 0}
-    {#each miniBlockColors as color, idx}
-      <div
-        class="mini"
-        style:background={color}
-        style:right={`calc(var(--mini-offset) + ${(idx % 3)} * var(--mini-step))`}
-        style:bottom={`calc(var(--mini-offset) + ${Math.floor(idx / 3)} * var(--mini-step))`}
-      ></div>
-    {/each}
-  {/if}
+  <MatrixCellContent {element} {showMiniBlocks} {hasValue} />
 </td>
 
 <style>
@@ -240,19 +232,6 @@
     );
   }
   
-  .mini {
-    width: var(--mini-size);
-    height: var(--mini-size);
-    position: absolute;
-    border: max(0.5px, calc(var(--cell-size, 32px) * 0.03)) solid rgba(0, 0, 0, 0.2);
-    box-sizing: border-box;
-    border-radius: 1px;
-  }
-
-  :global(html.dark) .mini {
-    border-color: rgba(255, 255, 255, 0.25);
-  }
-
   /* Identity element visual indicator */
   td.identity {
     border: 1px dashed rgba(150, 150, 150, 0.4);

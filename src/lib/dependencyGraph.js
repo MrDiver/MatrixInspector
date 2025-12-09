@@ -47,6 +47,7 @@ export class DependencyGraph {
     this.nodes = new Map(); // id -> element
     this.matrices = {}; // matrixName -> 2D array of element IDs
     this.intermediateCounter = 0; // Counter for generated intermediate matrices
+    this.intermediateDescriptions = {}; // matrixName -> description string
   }
 
   /**
@@ -223,6 +224,7 @@ export class DependencyGraph {
   clear() {
     this.nodes.clear();
     this.matrices = {};
+    this.intermediateDescriptions = {};
     resetIdCounter();
   }
 
@@ -378,26 +380,80 @@ export function transposeMatrix(graph, matrixName) {
 }
 
 /**
+ * Convert an AST node to a formula string representation
+ */
+function astToFormula(ast) {
+  if (!ast) return '';
+  
+  if (ast.type === 'matrix') {
+    return ast.transpose ? `${ast.name}ᵀ` : ast.name;
+  }
+  
+  if (ast.type === 'multiply') {
+    const left = astToFormula(ast.left);
+    const right = astToFormula(ast.right);
+    return `${left} × ${right}`;
+  }
+  
+  return '';
+}
+
+/**
  * Evaluate a formula AST and compute the result matrix
  * Returns the result matrix name
+ * matrixIndex tracks which instance of each matrix we're at (for tracking duplicates)
  */
-export function evaluateFormula(graph, ast, baseMatrixNames) {
+export function evaluateFormula(graph, ast, baseMatrixNames, matrixIndex = { count: 0 }) {
   if (!ast) return null;
   
   // If it's a single matrix (leaf node)
   if (ast.type === 'matrix') {
+    const currentIndex = matrixIndex.count;
+    matrixIndex.count++;
+    
+    // Create instance name for tracking separate occurrences
+    const instanceName = `${ast.name}_${currentIndex}`;
+    
+    // Ensure instance matrix exists with independent element IDs
+    const baseMatrixData = graph.getMatrixData(ast.name);
+    if (baseMatrixData) {
+      const rows = baseMatrixData.length;
+      const cols = baseMatrixData[0]?.length || 0;
+      
+      // Initialize instance matrix (this creates new element IDs)
+      graph.initMatrix(instanceName, rows, cols);
+      
+      // Sync values/colors from base, but keep new element IDs for separate tracking
+      const instanceData = graph.getMatrixData(instanceName);
+      if (instanceData) {
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < cols; j++) {
+            const baseElem = baseMatrixData[i][j];
+            const instElem = instanceData[i][j];
+            
+            if (baseElem && instElem) {
+              instElem.value = baseElem.value;
+              instElem.color = baseElem.color;
+              instElem.isIdentity = baseElem.isIdentity;
+              // instElem keeps its own unique ID for independent tracking
+            }
+          }
+        }
+      }
+    }
+    
     // Check if we need to transpose
     if (ast.transpose) {
-      return transposeMatrix(graph, ast.name);
+      return transposeMatrix(graph, instanceName);
     }
-    return ast.name;
+    return instanceName;
   }
   
   // If it's a multiplication
   if (ast.type === 'multiply') {
     // Recursively evaluate left and right subtrees
-    const leftMatrixName = evaluateFormula(graph, ast.left, baseMatrixNames);
-    const rightMatrixName = evaluateFormula(graph, ast.right, baseMatrixNames);
+    const leftMatrixName = evaluateFormula(graph, ast.left, baseMatrixNames, matrixIndex);
+    const rightMatrixName = evaluateFormula(graph, ast.right, baseMatrixNames, matrixIndex);
     
     if (!leftMatrixName || !rightMatrixName) return null;
     
@@ -422,6 +478,11 @@ export function evaluateFormula(graph, ast, baseMatrixNames) {
     
     // Perform multiplication
     multiplyMatrices(graph, leftMatrixName, rightMatrixName, intermediateName);
+    
+    // Store formula description for display (but not for the final result)
+    const leftFormula = astToFormula(ast.left);
+    const rightFormula = astToFormula(ast.right);
+    graph.intermediateDescriptions[intermediateName] = `${leftFormula} × ${rightFormula}`;
     
     return intermediateName;
   }
