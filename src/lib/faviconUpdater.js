@@ -10,6 +10,8 @@ const themeColors = {
 };
 
 export function updateFavicon(themeId) {
+  if (typeof document === 'undefined') return;
+  
   const colors = themeColors[themeId] || themeColors.light;
   const [primary, cyan, pink, rose] = colors;
 
@@ -34,7 +36,14 @@ export function updateFavicon(themeId) {
   favicon.href = dataUrl;
 }
 
-// Subscribe to theme changes
-selectedTheme.subscribe(themeId => {
-  updateFavicon(themeId);
-});
+// Initialize favicon updater - only subscribe if in browser
+export function initFaviconUpdater() {
+  if (typeof window === 'undefined') return;
+  
+  // Subscribe to theme changes
+  if (selectedTheme && typeof selectedTheme.subscribe === 'function') {
+    selectedTheme.subscribe(themeId => {
+      updateFavicon(themeId);
+    });
+  }
+}
