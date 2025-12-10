@@ -19,6 +19,7 @@ export const VALUE_TYPES = {
 import { writable, derived, get } from 'svelte/store';
 import { DependencyGraph, evaluateFormula } from './dependencyGraph';
 import { getBaseMatrices, parseFormula } from './formulaParser';
+import { currentPalette } from './themeStore';
 
 // Configuration stores
 export const rows = writable(5);
@@ -26,47 +27,87 @@ export const cols = writable(5);
 export const symmetric = writable(false);
 export const symmetricPattern = writable(false);
 
-// Define color palette - Soft pastels that work well in both light and dark modes
-export const COLOR_PALETTE = {
-  primary: '#667eea',     // Soft Indigo
-  secondary: '#764ba2',   // Soft Purple
-  accent1: '#f093fb',     // Soft Pink
-  accent2: '#4facfe',     // Soft Blue
-  accent3: '#43e97b',     // Soft Green
-  accent4: '#fa709a',     // Soft Rose
-  accent5: '#30b0fe',     // Sky Blue
-  accent6: '#a8edea',     // Soft Cyan
-  accent7: '#fed6e3',     // Blush
-  accent8: '#ffeaa7',     // Soft Yellow
-  accent9: '#fd79a8',     // Mauve
-  accent10: '#6c5ce7',    // Periwinkle
-  accent11: '#00b894',    // Mint
-  accent12: '#fdcb6e'     // Honey
-};
+export const currentColorIndex = writable(0);
+export const currentColorHex = derived([currentColorIndex, currentPalette], ([$idx, $pal]) => {
+  if (!$pal || $pal.length === 0) return '#ffffff';
+  const safeIdx = Math.max(0, $idx % $pal.length);
+  return $pal[safeIdx];
+});
 
-// Preset colors - Soft pastel palette for matrix cells
-export const PRESET_COLORS = [
-  COLOR_PALETTE.accent1,  // Soft Pink
-  COLOR_PALETTE.accent2,  // Soft Blue
-  COLOR_PALETTE.accent3,  // Soft Green
-  COLOR_PALETTE.accent4,  // Soft Rose
-  COLOR_PALETTE.accent5,  // Sky Blue
-  COLOR_PALETTE.accent6,  // Soft Cyan
-  COLOR_PALETTE.accent7,  // Blush
-  COLOR_PALETTE.accent8,  // Soft Yellow
-  COLOR_PALETTE.accent9,  // Mauve
-  COLOR_PALETTE.accent10, // Periwinkle
-  COLOR_PALETTE.accent11, // Mint
-  COLOR_PALETTE.accent12  // Honey
-];
+// Backwards-compatible alias for components still consuming a hex color store
+export const currentColor = currentColorHex;
 
-export const currentColor = writable(COLOR_PALETTE.accent1);
+function colorFromIndex(idx) {
+  const pal = get(currentPalette) || [];
+  if (!pal.length) return '#ffffff';
+  const safeIdx = Math.max(0, idx % pal.length);
+  return pal[safeIdx];
+}
+
+function nearestPaletteIndex(hex, paletteOverride = null) {
+  const pal = paletteOverride || get(currentPalette) || [];
+  if (!pal.length) return 0;
+  const target = hex.replace('#', '');
+  const tr = parseInt(target.slice(0, 2), 16);
+  const tg = parseInt(target.slice(2, 4), 16);
+  const tb = parseInt(target.slice(4, 6), 16);
+  let bestIdx = 0;
+  let bestDist = Infinity;
+  pal.forEach((p, i) => {
+    const c = p.replace('#', '');
+    const r = parseInt(c.slice(0, 2), 16);
+    const g = parseInt(c.slice(2, 4), 16);
+    const b = parseInt(c.slice(4, 6), 16);
+    const d = (r - tr) ** 2 + (g - tg) ** 2 + (b - tb) ** 2;
+    if (d < bestDist) {
+      bestDist = d;
+      bestIdx = i;
+    }
+  });
+  return bestIdx;
+}
 
 // Paint identity mode: when enabled, painting adds identity flag to colored cells
 export const paintIdentityMode = writable(false);
 
 // Main dependency graph
 export const graph = writable(new DependencyGraph());
+
+function applyPaletteToGraph(palette, previousPalette = null) {
+  graph.update(g => {
+    if (!palette || !palette.length) return g;
+    g.nodes.forEach(node => {
+      if (node.colorIndex !== undefined && node.colorIndex !== null) {
+        const idx = Math.max(0, node.colorIndex % palette.length);
+        node.color = palette[idx];
+        return;
+      }
+
+      if (node.color) {
+        // Backfill missing colorIndex using the previous palette if available to preserve intent
+        let idx = -1;
+        if (previousPalette && previousPalette.length) {
+          idx = previousPalette.findIndex(c => c.toLowerCase() === node.color.toLowerCase());
+          if (idx === -1) {
+            idx = nearestPaletteIndex(node.color, previousPalette);
+          }
+        }
+        if (idx === -1) {
+          idx = nearestPaletteIndex(node.color, palette);
+        }
+        node.colorIndex = idx;
+        node.color = palette[Math.max(0, idx % palette.length)];
+      }
+    });
+    return g;
+  });
+}
+
+let lastPalette = null;
+currentPalette.subscribe(pal => {
+  applyPaletteToGraph(pal, lastPalette);
+  lastPalette = pal;
+});
 
 // Highlighted elements store (Set of element IDs)
 export const highlightedElements = writable(new Set());
@@ -507,7 +548,7 @@ iterationCount.subscribe(() => {
 /**
  * Toggle a matrix element (paint/unpaint)
  */
-export function toggleElement(matrixName, row, col, color) {
+export function toggleElement(matrixName, row, col, colorIndex) {
   graph.update(g => {
     const element = g.getElementAt(matrixName, row, col);
     if (!element) return g;
@@ -518,13 +559,14 @@ export function toggleElement(matrixName, row, col, color) {
     
     // Toggle value to 0 or 1, always use color for visualization
     const newValue = element.value ? 0 : 1;
-    const newColor = newValue ? color : null; // Always use color when value is set
+    const newColor = newValue ? colorFromIndex(colorIndex) : null; // Always use color when value is set
     const newIsIdentity = newValue && paintIdentity; // Set isIdentity flag if paint identity mode is on
     
-    g.updateElement(matrixName, row, col, newValue, newColor);
+    g.updateElement(matrixName, row, col, newValue, newColor, newIsIdentity, newColor ? colorIndex : null);
     
     // Update the isIdentity flag
     element.isIdentity = newIsIdentity;
+    element.colorIndex = newColor ? colorIndex : null;
     
     // If symmetric mode is enabled
     let currentSym;
@@ -541,8 +583,9 @@ export function toggleElement(matrixName, row, col, color) {
         if (numRows === numCols && row !== col && col < numRows && row < numCols) {
           const symElement = g.getElementAt(matrixName, col, row);
           if (symElement) {
-            g.updateElement(matrixName, col, row, newValue, newColor);
+            g.updateElement(matrixName, col, row, newValue, newColor, newIsIdentity, newColor ? colorIndex : null);
             symElement.isIdentity = newIsIdentity;
+            symElement.colorIndex = newColor ? colorIndex : null;
           }
         }
       }
@@ -562,8 +605,9 @@ export function generateRandomMatrix(matrixName, sparsity, symmetricPattern = fa
   let r, c;
   rows.subscribe(val => r = val)();
   cols.subscribe(val => c = val)();
-  
-  const actualColor = color || PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
+  const pal = get(currentPalette) || [];
+  const idx = color ? nearestPaletteIndex(color) : Math.floor(Math.random() * (pal.length || 1));
+  const actualColor = colorFromIndex(idx);
   
   // Get current paint identity mode
   let paintIdentity;
@@ -580,7 +624,7 @@ export function generateRandomMatrix(matrixName, sparsity, symmetricPattern = fa
     // Clear existing values in target matrix
     for (let i = 0; i < numRows; i++) {
       for (let j = 0; j < numCols; j++) {
-        g.updateElement(matrixName, i, j, 0, null, false);
+        g.updateElement(matrixName, i, j, 0, null, false, null);
       }
     }
     
@@ -591,11 +635,11 @@ export function generateRandomMatrix(matrixName, sparsity, symmetricPattern = fa
         if (symmetricPattern && j < i) continue;
         
         if (Math.random() < sparsity) {
-          g.updateElement(matrixName, i, j, 1, actualColor, paintIdentity);
+          g.updateElement(matrixName, i, j, 1, actualColor, paintIdentity, idx);
           
           // If symmetric, mirror across diagonal
           if (symmetricPattern && i !== j) {
-            g.updateElement(matrixName, j, i, 1, actualColor, paintIdentity);
+            g.updateElement(matrixName, j, i, 1, actualColor, paintIdentity, idx);
           }
         }
       }
@@ -612,7 +656,9 @@ export function generateRandomMatrix(matrixName, sparsity, symmetricPattern = fa
  * Fill the main diagonal of a matrix
  */
 export function fillDiagonal(matrixName, color = null) {
-  const actualColor = color || PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
+  const pal = get(currentPalette) || [];
+  const idx = color ? nearestPaletteIndex(color) : Math.floor(Math.random() * (pal.length || 1));
+  const actualColor = colorFromIndex(idx);
   
   // Get current paint identity mode
   let paintIdentity;
@@ -627,7 +673,7 @@ export function fillDiagonal(matrixName, color = null) {
     const diag = Math.min(numRows, numCols);
 
     for (let i = 0; i < diag; i++) {
-      g.updateElement(matrixName, i, i, 1, actualColor, paintIdentity);
+      g.updateElement(matrixName, i, i, 1, actualColor, paintIdentity, idx);
     }
 
     return g;

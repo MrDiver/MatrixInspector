@@ -1,27 +1,22 @@
 <script>
-  import { currentColor, PRESET_COLORS } from '../lib/stores';
-  
-  function selectColor(color) {
-    currentColor.set(color);
+  import { currentColorIndex } from '../lib/stores';
+  import { currentPalette } from '../lib/themeStore';
+
+  function selectColor(idx, paletteLength) {
+    const safeIdx = Math.max(0, idx % Math.max(1, paletteLength));
+    currentColorIndex.set(safeIdx);
   }
 </script>
 
 <div class="color-picker-container">
-  <input
-    id="colorPicker"
-    type="color"
-    bind:value={$currentColor}
-    title="Custom Color"
-  />
-  
   <div class="presets">
-    {#each PRESET_COLORS as color}
+    {#each $currentPalette.slice(0, 10) as color, idx}
       <div
         class="color-swatch"
-        class:active={$currentColor === color}
+        class:active={$currentColorIndex === idx}
         style:background={color}
-        on:click={() => selectColor(color)}
-        on:keypress={(e) => e.key === 'Enter' && selectColor(color)}
+        on:click={() => selectColor(idx, $currentPalette.length)}
+        on:keypress={(e) => e.key === 'Enter' && selectColor(idx, $currentPalette.length)}
         role="button"
         tabindex="0"
         title={color}
@@ -36,23 +31,6 @@
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
-  }
-  
-  input[type="color"] {
-    width: 32px;
-    height: 32px;
-    border: 2px solid var(--border-color);
-    background: var(--bg-secondary);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    padding: 0;
-    touch-action: manipulation;
-  }
-  
-  input[type="color"]:hover {
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px var(--input-focus-shadow);
   }
   
   .presets {

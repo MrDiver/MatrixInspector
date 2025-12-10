@@ -1,0 +1,22 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @media (prefers-color-scheme: light) {
+        .rect-primary { fill: #667eea; }
+        .rect-cyan { fill: #a8edea; }
+        .rect-pink { fill: #f093fb; }
+        .rect-rose { fill: #fa709a; }
+      }
+      @media (prefers-color-scheme: dark) {
+        .rect-primary { fill: #00f5a0; }
+        .rect-cyan { fill: #00d9f5; }
+        .rect-pink { fill: #f093fb; }
+        .rect-rose { fill: #ff6b9d; }
+      }
+    </style>
+  </defs>
+  <rect x="2" y="2" width="12" height="12" rx="2" class="rect-primary"/>
+  <rect x="18" y="2" width="12" height="12" rx="2" class="rect-cyan"/>
+  <rect x="2" y="18" width="12" height="12" rx="2" class="rect-pink"/>
+  <rect x="18" y="18" width="12" height="12" rx="2" class="rect-rose"/>
+</svg>

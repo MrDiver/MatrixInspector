@@ -1,6 +1,7 @@
 <script>
   import MatrixCell from './MatrixCell.svelte';
-  import { getMatrixData, toggleElement, currentColor, graph, highlightedElements, persistentSelections } from '../lib/stores';
+  import { getMatrixData, toggleElement, currentColorIndex, graph, highlightedElements, persistentSelections } from '../lib/stores';
+  import { currentPalette } from './themeStore';
   
   export let matrixName;
   export let label = '';
@@ -37,19 +38,24 @@
   
   function handlePaint(row, col) {
     if (paintable) {
-      let color;
-      currentColor.subscribe(c => color = c)();
-      toggleElement(matrixName, row, col, color);
+      let colorIdx;
+      currentColorIndex.subscribe(c => colorIdx = c)();
+      toggleElement(matrixName, row, col, colorIdx);
     }
   }
   
   // Get actual element objects from graph
   $: elements = $matrixData.map(row => 
     row.map(elem => {
-      // Get dependencies with colors
+      // Get dependencies with colors resolved against current palette if index is present
       const deps = elem.dependencies.map(depId => {
         const depElem = $graph.getNode(depId);
-         return depElem?.color || 'var(--text-primary)';
+        if (!depElem) return 'var(--text-primary)';
+        if (depElem.colorIndex !== undefined && depElem.colorIndex !== null && $currentPalette?.length) {
+          const idx = Math.max(0, depElem.colorIndex % $currentPalette.length);
+          return $currentPalette[idx];
+        }
+        return depElem.color || 'var(--text-primary)';
       });
       
       return {

@@ -24,7 +24,7 @@ export function resetIdCounter() {
 /**
  * Create a matrix element with a unique ID
  */
-export function createElement(matrixName, row, col, value = 0, color = null, isIdentity = false) {
+export function createElement(matrixName, row, col, value = 0, color = null, isIdentity = false, colorIndex = null) {
   return {
     id: generateId(),
     matrixName,
@@ -32,6 +32,7 @@ export function createElement(matrixName, row, col, value = 0, color = null, isI
     col,
     value,
     color,
+    colorIndex,
     isIdentity, // Flag: true if this element should be treated as identity in multiplication
     dependencies: [], // IDs of elements this depends on
     dependents: []    // IDs of elements that depend on this
@@ -160,12 +161,13 @@ export class DependencyGraph {
   /**
    * Update an element's value and color
    */
-  updateElement(matrixName, row, col, value, color, isIdentity = false) {
+  updateElement(matrixName, row, col, value, color, isIdentity = false, colorIndex = null) {
     const element = this.getElementAt(matrixName, row, col);
     if (element) {
       element.value = value;
       element.color = color;
       element.isIdentity = isIdentity;
+      element.colorIndex = colorIndex;
     }
   }
 

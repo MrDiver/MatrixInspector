@@ -59,6 +59,8 @@
     display: flex;
     gap: 1px;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
     width: 26px;
     height: 26px;
     cursor: pointer;
@@ -86,13 +88,28 @@
   
   .csr-value-container.csr-highlight {
     box-shadow: 0 0 0 3px var(--color-rose),
-                0 0 8px color-mix(in srgb, var(--color-rose) 65%, transparent);
-    z-index: 5;
+                0 0 12px color-mix(in srgb, var(--color-rose) 70%, transparent),
+                0 0 24px color-mix(in srgb, var(--color-rose) 40%, transparent);
+    z-index: 10;
+    animation: highlightRotatePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   :global(html.dark) .csr-value-container.csr-highlight {
     box-shadow: 0 0 0 3px var(--color-rose),
-                0 0 8px color-mix(in srgb, var(--color-rose) 65%, transparent);
+                0 0 16px color-mix(in srgb, var(--color-rose) 70%, transparent),
+                0 0 32px color-mix(in srgb, var(--color-rose) 40%, transparent);
+  }
+
+  @keyframes highlightRotatePop {
+    0% {
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      transform: scale(1.22) rotate(-5deg);
+    }
+    100% {
+      transform: scale(1.15) rotate(0deg);
+    }
   }
   
   .mini-block {

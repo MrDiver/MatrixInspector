@@ -143,18 +143,6 @@
           <div class="matrix-controls">
             <button
               class="control-btn"
-              class:active={transpose[matrixName]}
-              on:click={() => toggleTranspose(matrixName)}
-              title="Transpose {matrixName}"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 17v-6a2 2 0 0 1 2-2h6"/>
-                <polyline points="10 9 16 9 16 15"/>
-              </svg>
-            </button>
-
-            <button
-              class="control-btn"
               on:click={() => {
                 let color;
                 currentColor.subscribe(c => (color = c))();
@@ -369,12 +357,6 @@
     background-color: var(--hover-bg, #f0f0f0);
     color: var(--text-primary, #333);
     border-color: var(--border-color, rgba(0, 0, 0, 0.15));
-  }
-
-  .control-btn.active {
-    background-color: var(--accent-color, #4CAF50);
-    color: white;
-    border-color: var(--accent-color, #4CAF50);
   }
 
   .empty-state {

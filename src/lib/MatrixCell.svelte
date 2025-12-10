@@ -14,6 +14,37 @@
   $: hasValue = element.value !== 0;
   $: isIdentity = element.isIdentity === true;
   $: shouldDim = anyHighlighted && !isHighlighted;
+  $: isNewlyFilled = hasValue && previousHadValue === false;
+  
+  let previousHadValue = false;
+  let isAnimating = false;
+  let wasHighlighted = false;
+  let isHighlightAnimating = false;
+  
+  $: {
+    if (hasValue && !previousHadValue) {
+      isAnimating = true;
+      previousHadValue = true;
+      // Reset animation state after it completes
+      setTimeout(() => {
+        isAnimating = false;
+      }, 450);
+    } else if (!hasValue) {
+      previousHadValue = false;
+    }
+  }
+  
+  $: {
+    if (isHighlighted && !wasHighlighted) {
+      isHighlightAnimating = true;
+      wasHighlighted = true;
+      setTimeout(() => {
+        isHighlightAnimating = false;
+      }, 500);
+    } else if (!isHighlighted) {
+      wasHighlighted = false;
+    }
+  }
   
   // Determine identity badge color based on cell color brightness
   $: identityBadgeColor = (() => {
@@ -140,6 +171,8 @@
   class:miniblocks={showMiniBlocks && hasValue}
   class:dimmed={shouldDim}
   class:identity={isIdentity}
+  class:fill-in={isAnimating}
+  class:highlight-pop={isHighlightAnimating}
   data-has-value={hasValue}
   data-id={element.id}
   on:click={handleClick}
@@ -310,5 +343,59 @@
 
   :global(html.dark) td.identity::after {
     background: rgba(180, 180, 180, 0.5);
+  }
+
+  /* Fill-in animation for newly painted cells */
+  @keyframes cellGrowIn {
+    0% {
+      transform: scale(0.4);
+      opacity: 0;
+      filter: blur(3px);
+    }
+    50% {
+      transform: scale(1.12);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+      filter: blur(0px);
+    }
+  }
+
+  @keyframes cellGlowPulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--cell-base) 100%, transparent),
+                  0 0 0 1px rgba(0, 0, 0, 0.06);
+    }
+    50% {
+      box-shadow: 0 0 4px 1px color-mix(in srgb, var(--cell-base) 40%, transparent),
+                  0 0 0 1px rgba(0, 0, 0, 0.06);
+    }
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--cell-base) 0%, transparent),
+                  0 0 0 1px rgba(0, 0, 0, 0.06);
+    }
+  }
+
+  td.fill-in {
+    animation: cellGrowIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               cellGlowPulse 0.45s ease-out forwards;
+  }
+
+  /* Highlight pop animation for first-time highlighting */
+  @keyframes highlightPop {
+    0% {
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      transform: scale(1.08) rotate(-5deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+  }
+
+  td.highlight-pop {
+    animation: highlightPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 </style>

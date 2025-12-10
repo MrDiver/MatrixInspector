@@ -8,6 +8,21 @@
   export let element;
   export let showMiniBlocks = false;
   export let hasValue = false;
+  
+  let isAnimating = false;
+  let previousHasValue = false;
+  
+  $: {
+    if (hasValue && !previousHasValue) {
+      isAnimating = true;
+      previousHasValue = true;
+      setTimeout(() => {
+        isAnimating = false;
+      }, 500);
+    } else if (!hasValue) {
+      previousHasValue = false;
+    }
+  }
 
   // Get colors for mini blocks
   $: miniBlockColors = (() => {
@@ -31,11 +46,13 @@
 </script>
 
 {#if showMiniBlocks && miniBlockColors.length > 0}
-  <div class="mini-container">
+  <div class="mini-container" class:animating={isAnimating}>
     {#each miniBlockColors as color, idx}
       <div
         class="mini"
+        class:animate={isAnimating}
         style:background={color}
+        style:--block-index={idx}
       ></div>
     {/each}
   </div>
@@ -67,9 +84,30 @@
     box-sizing: border-box;
     border-radius: 1px;
     flex: 0 0 calc(33.333% - calc(var(--cell-size, 32px) * 0.04));
+    transition: transform 0.2s ease, opacity 0.2s ease;
   }
 
   :global(html.dark) .mini {
     border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Mini-block cascade animation */
+  @keyframes miniBlockPopIn {
+    0% {
+      transform: scale(0) rotate(-180deg);
+      opacity: 0;
+    }
+    70% {
+      transform: scale(1.15) rotate(10deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  .mini.animate {
+    animation: miniBlockPopIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation-delay: calc(var(--block-index, 0) * 0.08s);
   }
 </style>

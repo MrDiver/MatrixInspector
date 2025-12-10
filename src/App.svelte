@@ -12,9 +12,10 @@
   import TrackedInstancesView from './lib/TrackedInstancesView.svelte';
   import BaseMatricesSidebar from './lib/BaseMatricesSidebar.svelte';
   import ToggleIcon from './lib/ToggleIcon.svelte';
-  import { symmetric, symmetricPattern, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode, currentFormula } from './lib/stores';
+  import ThemeMenu from './lib/ThemeMenu.svelte';
+  import { symmetric, symmetricPattern, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode, currentFormula, graph } from './lib/stores';
   import { getBaseMatrices, getAllMatrixReferences } from './lib/formulaParser';
-  import { darkMode } from './lib/themeStore';
+  import { darkMode, selectedTheme, setTheme, themes } from './lib/themeStore';
   import './sw-registration.js';
     // Initialize formula matrices only when formula actually changes (avoid re-init on fullscreen toggle)
     let lastInitializedFormula = null;
@@ -31,6 +32,7 @@
   let pythonEditorOpen = false;
   let pythonResult = null;
   let showShortcutModal = false;
+  let showThemeMenu = false;
   let isFullscreen = false;
 
   // Sync Python result into store (including clearing when null)
@@ -232,10 +234,10 @@
     <div class="header-left">
       <div class="logo">
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <rect x="2" y="2" width="12" height="12" fill="#4363d8" rx="2"/>
-          <rect x="18" y="2" width="12" height="12" fill="#46f0f0" rx="2"/>
-          <rect x="2" y="18" width="12" height="12" fill="#f58231" rx="2"/>
-          <rect x="18" y="18" width="12" height="12" fill="#e6194b" rx="2"/>
+          <rect x="2" y="2" width="12" height="12" fill="var(--color-primary)" rx="2"/>
+          <rect x="18" y="2" width="12" height="12" fill="var(--color-cyan)" rx="2"/>
+          <rect x="2" y="18" width="12" height="12" fill="var(--color-pink)" rx="2"/>
+          <rect x="18" y="18" width="12" height="12" fill="var(--color-rose)" rx="2"/>
         </svg>
         <h1>Matrix Inspector</h1>
       </div>
@@ -263,24 +265,11 @@
           <rect x="14" y="14" width="7" height="7"/>
         </svg>
       </button>
-      <button on:click={() => darkMode.update(d => !d)} class="icon-btn" title="Toggle Dark Mode">
-        {#if $darkMode}
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="5"/>
-            <line x1="12" y1="1" x2="12" y2="3"/>
-            <line x1="12" y1="21" x2="12" y2="23"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-            <line x1="1" y1="12" x2="3" y2="12"/>
-            <line x1="21" y1="12" x2="23" y2="12"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-          </svg>
-        {:else}
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
-        {/if}
+      <button on:click={() => showThemeMenu = !showThemeMenu} class="icon-btn" title="Open theme menu">
+        <div class="theme-pill">
+          <span class="dot" aria-hidden="true"></span>
+          <span class="label">{$selectedTheme}</span>
+        </div>
       </button>
       <button on:click={() => pythonEditorOpen = !pythonEditorOpen} class="icon-btn" class:active={pythonEditorOpen} title="Python Editor (Ctrl+P)">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -296,28 +285,12 @@
     </div>
   </header>
 
+  <ThemeMenu open={showThemeMenu} onClose={() => showThemeMenu = false} />
+
   <!-- Formula Toolbar - Always visible, drives the entire application -->
   <FormulaToolbar />
 
-
   <div class="toolbar">
-    <div class="toolbar-row">
-      <div class="toolbar-section">
-        <span class="section-label">📐 Matrix Dimensions</span>
-        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Controls moved to sidebar</p>
-      </div>
-
-      <div class="toolbar-section">
-        <button on:click={handleClear} class="btn btn-secondary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-          Clear
-        </button>
-      </div>
-    </div>
-
     <div class="toolbar-row">
       <div class="toolbar-section">
         <span class="section-label">🎨 Paint Mode</span>
@@ -384,13 +357,43 @@
     </button>
   {/if}
   
-  {#if showCSR && $parsedFormula}
-    {@const baseMatrices = getBaseMatrices($parsedFormula)}
+  {#if showCSR && $parsedFormula && $graph}
+    {@const trackedInstances = getAllMatrixReferences($parsedFormula)
+      .map((ref, index) => {
+        let instanceName = `${ref.name}_${index}`;
+        if (ref.transpose) instanceName = `${ref.name}_${index}_T`;
+        return {
+          name: instanceName,
+          displayName: `${ref.displayName} (${index})`
+        };
+      })
+      .filter(inst => $graph.matrices[inst.name])}
+    {@const intermediates = Object.entries($graph.intermediateDescriptions || {})
+      .filter(([matrixName]) => $graph.matrices[matrixName])
+      .map(([matrixName, description]) => ({
+        name: matrixName,
+        description
+      }))}
     <div class="csr-panel">
-      {#each baseMatrices as matrixName}
-        <CSRView matrixName={matrixName} label={matrixName} />
-      {/each}
-      <CSRView matrixName="O" label="O" />
+      <div class="csr-section">
+        <h3 class="csr-section-title">Tracked Instances</h3>
+        <div class="csr-cards-row">
+          {#each trackedInstances as instance}
+            <CSRView matrixName={instance.name} label={instance.displayName} />
+          {/each}
+        </div>
+      </div>
+      
+      {#if intermediates.length > 0}
+        <div class="csr-section">
+          <h3 class="csr-section-title">Results</h3>
+          <div class="csr-cards-row">
+            {#each intermediates as intermediate}
+              <CSRView matrixName={intermediate.name} label={intermediate.description} />
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
   {/if}
 
@@ -400,11 +403,11 @@
 
   <!-- Keyboard Shortcuts Modal -->
   {#if showShortcutModal}
-    <div class="modal-overlay" on:click={() => showShortcutModal = false}>
-      <div class="modal" on:click|stopPropagation>
+    <div class="modal-overlay" role="button" tabindex="0" on:click={() => showShortcutModal = false} on:keydown={(e) => e.key === 'Escape' && (showShortcutModal = false)}>
+      <div class="modal" role="dialog" aria-modal="true" tabindex="-1" on:click|stopPropagation on:keydown={(e) => e.key === 'Escape' && (showShortcutModal = false)}>
         <div class="modal-header">
           <h2>Keyboard Shortcuts</h2>
-          <button on:click={() => showShortcutModal = false} class="close-btn">
+          <button on:click={() => showShortcutModal = false} class="close-btn" aria-label="Close modal">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
@@ -444,16 +447,6 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  .formula-layout .matrix-row {
-    justify-content: flex-start;
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-
-  .formula-layout .result-row {
-    border-top: 2px solid var(--border-color);
-    padding-top: 24px;
-  }
   
   main {
     display: flex;
@@ -462,16 +455,22 @@
   }
 
   .app-header {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 24px;
-    background: var(--header-gradient);
-    color: white;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    padding: 16px 24px 20px;
+    background: color-mix(in srgb, var(--bg-primary) 82%, var(--accent-strong) 18%);
+    color: var(--text-primary);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    border: 1px solid color-mix(in srgb, var(--accent-strong) 20%, var(--border-color));
+    border-radius: 16px;
     gap: 16px;
     flex-wrap: wrap;
+    overflow: hidden;
   }
+
+
 
   .header-left {
     display: flex;
@@ -506,66 +505,57 @@
 
   .icon-btn {
     padding: 8px;
-    background: var(--button-hover-bg);
+    background: color-mix(in srgb, var(--button-hover-bg) 70%, var(--accent-strong) 12%);
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    color: white;
+    color: var(--text-primary);
     transition: background 0.2s, transform 0.1s;
     display: flex;
     align-items: center;
     justify-content: center;
     touch-action: manipulation;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
   :global(.icon-btn.active) {
-    background: var(--button-active-bg);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+    background: color-mix(in srgb, var(--button-active-bg) 70%, var(--accent-strong) 18%);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-strong) 30%, rgba(255, 255, 255, 0.35));
   }
 
   .icon-btn:hover {
-    background: var(--button-active-bg);
+    background: color-mix(in srgb, var(--button-active-bg) 72%, var(--accent-strong) 20%);
+    transform: translateY(-1px);
   }
 
   .icon-btn:active {
-    transform: scale(0.95);
-  }
-
-  .matrix-icon-btn {
-    padding: 8px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    cursor: pointer;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    touch-action: manipulation;
-    width: 36px;
-    height: 36px;
-  }
-
-  .matrix-icon-btn:hover {
-    border-color: var(--primary-blue);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
-  }
-
-  .matrix-icon-btn:active {
     transform: translateY(0);
   }
 
-  .matrix-icon-btn.active {
-    background: #43e97b;
-    color: white;
-    border-color: #43e97b;
+  .theme-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--bg-tertiary);
+    border-radius: 999px;
+    color: var(--text-primary);
+    font-weight: 600;
+    text-transform: capitalize;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   }
 
-  .matrix-icon-btn.active:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(67, 233, 123, 0.3);
+  .theme-pill .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--header-gradient);
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-pill .label {
+    font-size: 13px;
+    letter-spacing: 0.02em;
   }
 
   .toolbar {
@@ -611,62 +601,6 @@
 
   .input-group span {
     font-weight: 500;
-    white-space: nowrap;
-  }
-
-  .dimension-spinner {
-    display: flex;
-    align-items: center;
-  }
-
-  .dimension-spinner .input-group {
-    gap: 4px;
-  }
-
-  .dimension-spinner .x {
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin: 0 2px;
-    display: flex;
-    align-items: center;
-    height: 1.2em;
-  }
-
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-  }
-
-  .matrix-with-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .matrix-actions {
-    display: flex;
-    gap: 6px;
-    justify-content: center;
-  }
-
-  .btn {
-    padding: 8px 14px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    touch-action: manipulation;
     white-space: nowrap;
   }
 
@@ -725,29 +659,6 @@
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
   }
 
-  .btn-secondary {
-    background: var(--danger-red);
-    color: white;
-  }
-
-  .btn-secondary:hover {
-    background: var(--danger-red-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-  }
-
-  .btn-secondary:active {
-    transform: translateY(0);
-  }
-
-  :global(html.dark) .btn-secondary {
-    background: #fa709a;
-  }
-
-  :global(html.dark) .btn-secondary:hover {
-    background: #f55a86;
-  }
-  
   .workspace {
     display: flex;
     gap: 0;
@@ -809,34 +720,38 @@
     width: 100%;
   }
 
-  .matrix-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    justify-content: center;
-  }
-
-  .matrix-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    min-width: 200px;
-    flex-shrink: 0;
-  }
-
-  
   .csr-panel {
     display: flex;
-    flex-direction: row;
-    gap: 16px;
+    flex-direction: column;
+    gap: 24px;
     padding: 16px;
     border-top: 1px solid var(--border-color);
-    flex-wrap: wrap;
-    justify-content: center;
     width: 100%;
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.05);
     overflow-x: auto;
+  }
+
+  .csr-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .csr-section-title {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.85;
+  }
+
+  .csr-cards-row {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    flex-wrap: wrap;
   }
   
   input[type="number"] {
@@ -912,26 +827,11 @@
       border-radius: 12px;
     }
 
-    .matrix-row {
-      gap: 12px;
-    }
-
-    .matrix-cell {
-      gap: 8px;
-      min-width: 160px;
-    }
-
-    .btn {
-      padding: 6px 12px;
-      font-size: 12px;
-    }
-
     .icon-btn {
       padding: 6px;
     }
 
-    .input-group,
-    .checkbox-label {
+    .input-group {
       font-size: 12px;
     }
 
@@ -980,38 +880,11 @@
       gap: 6px;
     }
 
-    .matrix-cell {
-      min-width: 140px;
-    }
-
-    .btn {
-      padding: 5px 10px;
-      font-size: 11px;
-    }
-
     input[type="number"] {
       width: 45px;
       padding: 3px 6px;
       font-size: 11px;
     }
-
-    .input-group,
-    .checkbox-label {
-      font-size: 11px;
-    }
-  }
-
-  .matrix-with-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .selection-controls {
-    display: flex;
-    justify-content: center;
-    width: 100%;
   }
 
   /* Floating Clear Selection Button */
