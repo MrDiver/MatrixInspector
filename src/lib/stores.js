@@ -181,11 +181,70 @@ export function setMatrixDimensions(name, rowsVal, colsVal) {
     [name]: { rows: r, cols: c }
   }));
 
-  const currentParsed = get(parsedFormula);
-  if (!currentParsed) return;
+  // Snapshot all other matrices to preserve their data
+  const otherMatrices = new Map();
+  graph.subscribe(g => {
+    const dims = get(matrixDimensions);
+    Object.keys(dims).forEach(matName => {
+      if (matName === name) return; // Skip the one we're resizing
+      const data = g.getMatrixData(matName);
+      if (!data) return;
+      const rowsCount = data.length;
+      const colsCount = data[0]?.length || 0;
+      const clone = Array.from({ length: rowsCount }, (_, i) =>
+        Array.from({ length: colsCount }, (_, j) => {
+          const src = data[i][j];
+          if (!src) return null;
+          return {
+            value: src.value,
+            color: src.color,
+            isIdentity: src.isIdentity,
+            dependencies: [...src.dependencies]
+          };
+        })
+      );
+      otherMatrices.set(matName, clone);
+    });
+  })();
 
-  const baseMatrices = getBaseMatrices(currentParsed);
-  initializeFormulaMatrices(baseMatrices, r, c);
+  graph.update(g => {
+    // Resize only the target matrix, keeping other matrices intact
+    const targetDims = get(matrixDimensions)[name] || { rows: 5, cols: 5 };
+    g.initMatrix(name, targetDims.rows, targetDims.cols);
+    
+    // Restore other matrices
+    otherMatrices.forEach((clone, matName) => {
+      const existing = g.matrices[matName];
+      const rowsCount = clone.length;
+      const colsCount = clone[0]?.length || 0;
+      
+      // Only reinit if dimensions changed
+      if (!existing || existing.length !== rowsCount || (existing[0]?.length || 0) !== colsCount) {
+        g.initMatrix(matName, rowsCount, colsCount);
+      }
+      
+      const target = g.getMatrixData(matName);
+      if (target) {
+        for (let i = 0; i < rowsCount; i++) {
+          for (let j = 0; j < colsCount; j++) {
+            const s = clone[i]?.[j];
+            const t = target[i]?.[j];
+            if (s && t) {
+              t.value = s.value;
+              t.color = s.color;
+              t.isIdentity = s.isIdentity;
+              t.dependencies = [...s.dependencies];
+            }
+          }
+        }
+      }
+    });
+    
+    return g;
+  });
+
+  // Recompute formula
+  recomputeFormula();
 }
 
 /**
