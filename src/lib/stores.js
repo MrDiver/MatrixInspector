@@ -24,6 +24,7 @@ import { getBaseMatrices, parseFormula } from './formulaParser';
 export const rows = writable(5);
 export const cols = writable(5);
 export const symmetric = writable(false);
+export const symmetricPattern = writable(false);
 
 // Define color palette - Soft pastels that work well in both light and dark modes
 export const COLOR_PALETTE = {
@@ -248,6 +249,31 @@ function recomputeIterative(parsed) {
   const iterations = Math.max(1, Number(get(iterationCount)) || 1);
   const dims = get(matrixDimensions);
 
+  // Snapshot base matrices (explicit numeric ones) to preserve user edits across recompute
+  const explicitNames = Array.from(parsed.explicitVariables || []);
+  const baseSnapshots = new Map();
+  graph.subscribe(g => {
+    explicitNames.forEach(name => {
+      const data = g.getMatrixData(name);
+      if (!data) return;
+      const rowsCount = data.length;
+      const colsCount = data[0]?.length || 0;
+      const clone = Array.from({ length: rowsCount }, (_, i) =>
+        Array.from({ length: colsCount }, (_, j) => {
+          const src = data[i][j];
+          if (!src) return null;
+          return {
+            value: src.value,
+            color: src.color,
+            isIdentity: src.isIdentity,
+            dependencies: [...src.dependencies]
+          };
+        })
+      );
+      baseSnapshots.set(name, clone);
+    });
+  })();
+
   graph.update(g => {
     g.clear();
     g.intermediateCounter = 0;
@@ -256,7 +282,6 @@ function recomputeIterative(parsed) {
     // Track max computed index per base name
     const maxIndexByBase = new Map();
 
-    const explicitNames = Array.from(parsed.explicitVariables || []);
     explicitNames.forEach(name => {
       const match = name.match(/^([A-Z][a-z]*)_(\d+)$/);
       if (match) {
@@ -266,6 +291,24 @@ function recomputeIterative(parsed) {
       }
       const d = dims[name] || { rows: 5, cols: 5 };
       g.initMatrix(name, d.rows, d.cols);
+      const snap = baseSnapshots.get(name);
+      if (snap) {
+        const target = g.getMatrixData(name);
+        if (target) {
+          for (let i = 0; i < snap.length; i++) {
+            for (let j = 0; j < (snap[i]?.length || 0); j++) {
+              const s = snap[i][j];
+              const t = target[i]?.[j];
+              if (s && t) {
+                t.value = s.value;
+                t.color = s.color;
+                t.isIdentity = s.isIdentity;
+                t.dependencies = [...s.dependencies];
+              }
+            }
+          }
+        }
+      }
     });
 
     const ensureMatrix = (name, rows, cols) => {

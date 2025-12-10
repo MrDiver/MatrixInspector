@@ -12,7 +12,7 @@
   import TrackedInstancesView from './lib/TrackedInstancesView.svelte';
   import BaseMatricesSidebar from './lib/BaseMatricesSidebar.svelte';
   import ToggleIcon from './lib/ToggleIcon.svelte';
-  import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode, currentFormula } from './lib/stores';
+  import { symmetric, symmetricPattern, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode, currentFormula } from './lib/stores';
   import { getBaseMatrices, getAllMatrixReferences } from './lib/formulaParser';
   import { darkMode } from './lib/themeStore';
   import './sw-registration.js';
@@ -138,6 +138,7 @@
   
   // Sync symmetric checkbox to store
   $: symmetric.set(symmetricValue)
+  $: symmetricPattern.set(generateSymmetric)
   
   function handleClear() {
     // Clear matrices based on current formula

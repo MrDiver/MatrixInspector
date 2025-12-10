@@ -4,7 +4,7 @@
    * Shows S, K, etc. with editing controls (random fill, diagonal fill, transpose, size)
    */
   import MatrixView from './MatrixView.svelte';
-  import { parsedFormula, currentColor, transposeState, matrixDimensions, setMatrixDimensions, clearMatrix } from './stores';
+  import { parsedFormula, currentColor, transposeState, matrixDimensions, symmetricPattern, setMatrixDimensions, clearMatrix } from './stores';
   import { getBaseMatrices } from './formulaParser';
   import { generateRandomMatrix, fillDiagonal } from './stores';
 
@@ -158,7 +158,9 @@
               on:click={() => {
                 let color;
                 currentColor.subscribe(c => (color = c))();
-                generateRandomMatrix(matrixName, 0.3, false, color);
+                let symPattern;
+                symmetricPattern.subscribe(v => symPattern = v)();
+                generateRandomMatrix(matrixName, 0.3, symPattern, color);
               }}
               title="Random Fill {matrixName}"
             >
