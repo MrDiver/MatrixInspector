@@ -159,7 +159,7 @@
 
     const width = area.offsetWidth || area.scrollWidth;
     const height = area.offsetHeight || area.scrollHeight;
-    const scale = Math.min(2, window.devicePixelRatio || 1.5);
+    const scale = 1; // Use 1:1 pixel ratio to match on-screen rendering
 
     const canvas = await html2canvas(area, {
       backgroundColor: '#ffffff',
@@ -1179,21 +1179,27 @@
   /* Screenshot-safe overrides to avoid unsupported CSS color functions */
   :global(.screenshot-safe *) {
     filter: none !important;
+    background-image: none !important;
     text-shadow: none !important;
   }
 
-  /* Restore visible highlights in screenshot-safe mode with solid colors instead of color-mix */
-  :global(.screenshot-safe td.highlight) {
-    opacity: 1 !important;
-    box-shadow: inset 0 0 0 3px var(--cell-highlight) !important;
-    background: var(--cell-highlight) !important;
-    z-index: 6;
+  /* Flatten shadows so cells don't render bulky 3D edges in screenshots */
+  :global(.screenshot-safe .matrix-grid),
+  :global(.screenshot-safe .matrix-row),
+  :global(.screenshot-safe .matrix-cell),
+  :global(.screenshot-safe td) {
+    box-shadow: none !important;
   }
 
-  /* Normal cells in screenshot mode keep their base color */
+  /* Keep subtle borders so cell boundaries remain visible */
   :global(.screenshot-safe td) {
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06) !important;
-    background: var(--cell-base, var(--matrix-cell-bg)) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    background: var(--matrix-cell-bg) !important;
+  }
+
+  /* Highlight only adds an outline to avoid filling the cell */
+  :global(.screenshot-safe td.highlight) {
+    border: 2px solid var(--cell-highlight) !important;
   }
 </style>
 
