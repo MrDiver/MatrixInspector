@@ -50,7 +50,7 @@ export default defineConfig({
   // Use relative paths so the app works when served from a GitHub Pages subpath
   base: './',
   build: {
-    // Debug build configuration
+    // Always build with debug settings
     minify: false,
     sourcemap: true,
     rollupOptions: {
