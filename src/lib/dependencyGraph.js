@@ -258,7 +258,11 @@ export function multiplyMatrices(graph, leftMatrixName, rightMatrixName, resultM
   
   // Ensure dimensions match for multiplication
   if (leftCols !== rightRows) {
-    console.error(`Cannot multiply ${leftMatrixName} (${leftRows}×${leftCols}) with ${rightMatrixName} (${rightRows}×${rightCols})`);
+    const error = `Cannot multiply ${leftMatrixName} (${leftRows}×${leftCols}) × ${rightMatrixName} (${rightRows}×${rightCols})`;
+    console.error(error);
+    // Store error in graph for later retrieval
+    if (!graph.dimensionErrors) graph.dimensionErrors = [];
+    graph.dimensionErrors.push(error);
     return;
   }
   

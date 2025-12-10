@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { parseFormula } from './formulaParser';
   import { currentFormula, parsedFormula, iterationCount } from './stores';
+  import DimensionWarning from './DimensionWarning.svelte';
 
   let lastParsedFormula = $currentFormula;
 
@@ -49,6 +50,8 @@
     <button class="example-btn" on:click={() => { currentFormula.set('P_0^T*K_0*P_0'); }}>P₀^T×K₀×P₀</button>
   </div>
 </div>
+
+<DimensionWarning />
 
 <style>
   .formula-toolbar {

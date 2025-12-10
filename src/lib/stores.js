@@ -118,6 +118,9 @@ const SUPPORTED_IMPORT_VERSIONS = [2, 3];
 // Per-matrix dimensions
 export const matrixDimensions = writable({}); // { [name]: { rows, cols } }
 
+// Track dimension mismatch errors during evaluation
+export const dimensionMismatches = writable([]);
+
 /**
  * Initialize matrices from formula
  */
@@ -255,6 +258,9 @@ export function recomputeFormula() {
   parsedFormula.subscribe(val => parsed = val)();
   if (!parsed) return;
 
+  // Clear previous mismatch errors
+  dimensionMismatches.set([]);
+
   if (parsed.mode === 'iterative') {
     recomputeIterative(parsed);
     return;
@@ -264,8 +270,14 @@ export function recomputeFormula() {
 
   graph.update(g => {
     g.intermediateCounter = 0;
+    g.dimensionErrors = [];
 
     const resultMatrixName = evaluateFormula(g, parsed.ast, Array.from(parsed.variables));
+
+    // Push dimension errors to store
+    if (g.dimensionErrors && g.dimensionErrors.length > 0) {
+      dimensionMismatches.set(g.dimensionErrors);
+    }
 
     if (resultMatrixName && resultMatrixName !== 'O') {
       const resultData = g.getMatrixData(resultMatrixName);
@@ -308,10 +320,14 @@ function recomputeIterative(parsed) {
   const iterations = Math.max(1, Number(get(iterationCount)) || 1);
   const dims = get(matrixDimensions);
 
+  // Clear previous mismatch errors
+  dimensionMismatches.set([]);
+
   // Snapshot base matrices (explicit numeric ones) to preserve user edits across recompute
   const explicitNames = Array.from(parsed.explicitVariables || []);
   const baseSnapshots = new Map();
   graph.subscribe(g => {
+    g.dimensionErrors = [];
     explicitNames.forEach(name => {
       const data = g.getMatrixData(name);
       if (!data) return;
@@ -334,6 +350,7 @@ function recomputeIterative(parsed) {
   })();
 
   graph.update(g => {
+    g.dimensionErrors = [];
     g.clear();
     g.intermediateCounter = 0;
     g.intermediateDescriptions = {};
@@ -460,6 +477,11 @@ function recomputeIterative(parsed) {
         copyMatrix(resultName, targetName, targetName);
         maxIndexByBase.set(rec.target.baseName, Math.max(maxIndexByBase.get(rec.target.baseName) || 0, targetIndex));
       }
+    }
+
+    // Push dimension errors to store
+    if (g.dimensionErrors && g.dimensionErrors.length > 0) {
+      dimensionMismatches.set(g.dimensionErrors);
     }
 
     return g;
