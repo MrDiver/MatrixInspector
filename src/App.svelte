@@ -1178,16 +1178,22 @@
 
   /* Screenshot-safe overrides to avoid unsupported CSS color functions */
   :global(.screenshot-safe *) {
-    box-shadow: none !important;
     filter: none !important;
-    background-image: none !important;
     text-shadow: none !important;
   }
 
-  /* Restore visible highlights in screenshot-safe mode without color-mix/gradients */
+  /* Restore visible highlights in screenshot-safe mode with solid colors instead of color-mix */
   :global(.screenshot-safe td.highlight) {
+    opacity: 1 !important;
     box-shadow: inset 0 0 0 3px var(--cell-highlight) !important;
-    background: linear-gradient(135deg, var(--cell-highlight) 0%, rgba(0, 0, 0, 0.05) 100%) !important;
+    background: var(--cell-highlight) !important;
+    z-index: 6;
+  }
+
+  /* Normal cells in screenshot mode keep their base color */
+  :global(.screenshot-safe td) {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06) !important;
+    background: var(--cell-base, var(--matrix-cell-bg)) !important;
   }
 </style>
 
