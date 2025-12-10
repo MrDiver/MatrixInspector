@@ -94,7 +94,20 @@ export const pythonMatrix = writable(null);
 
 // Formula stores - Formula is always present and drives the application
 export const currentFormula = writable('S*K*S'); // Default formula
+
+// Initialize parsedFormula with the parsed default formula so matrices are initialized on app load
+let defaultParsed = null;
+let parsedFormula_internal = null;
 export const parsedFormula = writable(null);
+
+// Subscribe to currentFormula and parse it automatically
+currentFormula.subscribe(formula => {
+  if (formula) {
+    const parsed = parseFormula(formula);
+    parsedFormula_internal = parsed.error ? null : parsed;
+    parsedFormula.set(parsedFormula_internal);
+  }
+});
 
 // Export/import versioning
 const CURRENT_EXPORT_VERSION = 3;
@@ -116,12 +129,14 @@ export function initializeFormulaMatrices(matrixNames, defaultRows = 5, defaultC
     }
   });
 
+  // Update store AND use updatedDims directly for graph initialization (don't rely on get() after set())
   matrixDimensions.set(updatedDims);
 
   graph.update(g => {
     g.clear();
     
-    // Initialize each base matrix using its stored dimensions
+    // Use the updatedDims that we know are correct, not the store value
+    // (store updates may be batched/async in Svelte)
     matrixNames.forEach(name => {
       const dims = updatedDims[name] || { rows: defaultRows, cols: defaultCols };
       g.initMatrix(name, dims.rows, dims.cols);
@@ -137,6 +152,20 @@ export function initializeFormulaMatrices(matrixNames, defaultRows = 5, defaultC
   cols.set(defaultCols);
   
   // Compute result based on formula
+  recomputeFormula();
+}
+
+// Clear a single matrix without affecting others
+export function clearMatrix(matrixName) {
+  const dims = get(matrixDimensions)[matrixName] || { rows: 5, cols: 5 };
+  
+  graph.update(g => {
+    // Clear just this matrix's data, keeping dimensions
+    g.initMatrix(matrixName, dims.rows, dims.cols);
+    return g;
+  });
+  
+  // Recompute formula to update results
   recomputeFormula();
 }
 

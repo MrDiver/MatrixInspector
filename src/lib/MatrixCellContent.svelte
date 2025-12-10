@@ -31,19 +31,34 @@
 </script>
 
 {#if showMiniBlocks && miniBlockColors.length > 0}
-  {#each miniBlockColors as color, idx}
-    <div
-      class="mini"
-      style:background={color}
-      style:right={`calc(var(--mini-offset) + ${(idx % 3)} * var(--mini-step))`}
-      style:bottom={`calc(var(--mini-offset) + ${Math.floor(idx / 3)} * var(--mini-step))`}
-    ></div>
-  {/each}
+  <div class="mini-container">
+    {#each miniBlockColors as color, idx}
+      <div
+        class="mini"
+        style:background={color}
+      ></div>
+    {/each}
+  </div>
 {/if}
 
 <style>
-  .mini {
+  .mini-container {
     position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: calc(var(--cell-size, 32px) * 0.04);
+    padding: calc(var(--cell-size, 32px) * 0.06);
+    box-sizing: border-box;
+  }
+
+  .mini {
+    position: relative;
     border-radius: 2px;
     width: var(--mini-size);
     height: var(--mini-size);
@@ -51,6 +66,7 @@
     border: max(0.5px, calc(var(--cell-size, 32px) * 0.03)) solid rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
     border-radius: 1px;
+    flex: 0 0 calc(33.333% - calc(var(--cell-size, 32px) * 0.04));
   }
 
   :global(html.dark) .mini {

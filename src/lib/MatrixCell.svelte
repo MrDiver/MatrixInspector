@@ -260,8 +260,15 @@
   /* Identity element visual indicator */
   td.identity {
     border: 1px dashed rgba(150, 150, 150, 0.4);
-    opacity: 0.85;
     position: relative;
+  }
+
+  td.identity:not(.dimmed) {
+    opacity: 0.85;
+  }
+
+  td.identity.dimmed {
+    opacity: 0.3;
   }
 
   :global(html.dark) td.identity {

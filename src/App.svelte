@@ -12,15 +12,18 @@
   import TrackedInstancesView from './lib/TrackedInstancesView.svelte';
   import BaseMatricesSidebar from './lib/BaseMatricesSidebar.svelte';
   import ToggleIcon from './lib/ToggleIcon.svelte';
-  import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode } from './lib/stores';
+  import { symmetric, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode, currentFormula } from './lib/stores';
   import { getBaseMatrices, getAllMatrixReferences } from './lib/formulaParser';
   import { darkMode } from './lib/themeStore';
   import './sw-registration.js';
-    // Initialize formula matrices when formula changes (regardless of modal state)
+    // Initialize formula matrices only when formula actually changes (avoid re-init on fullscreen toggle)
+    let lastInitializedFormula = null;
+
     $: if ($parsedFormula) {
       const baseMatrices = getBaseMatrices($parsedFormula);
-      if (baseMatrices.length > 0) {
+      if (baseMatrices.length > 0 && $currentFormula !== lastInitializedFormula) {
         initializeFormulaMatrices(baseMatrices);
+        lastInitializedFormula = $currentFormula;
       }
     }
 
