@@ -94,6 +94,7 @@ export const pythonMatrix = writable(null);
 
 // Formula stores - Formula is always present and drives the application
 export const currentFormula = writable('S*K*S'); // Default formula
+export const iterationCount = writable(3); // Iteration count for iterative formulas (min 1)
 
 // Initialize parsedFormula with the parsed default formula so matrices are initialized on app load
 let defaultParsed = null;
@@ -192,40 +193,40 @@ export function setMatrixDimensions(name, rowsVal, colsVal) {
 export function recomputeFormula() {
   let parsed = null;
   parsedFormula.subscribe(val => parsed = val)();
-  
-  // @ts-ignore - parsed comes from store subscription
-  if (!parsed || !parsed.ast) return;
-  
+  if (!parsed) return;
+
+  if (parsed.mode === 'iterative') {
+    recomputeIterative(parsed);
+    return;
+  }
+
+  if (!parsed.ast) return;
+
   graph.update(g => {
-    // Reset intermediate counter for fresh computation
     g.intermediateCounter = 0;
-    
-    // Evaluate the formula AST (performs actual matrix multiplication)
-    // @ts-ignore - parsed is checked for ast above
+
     const resultMatrixName = evaluateFormula(g, parsed.ast, Array.from(parsed.variables));
-    
-    // Copy result to O matrix
+
     if (resultMatrixName && resultMatrixName !== 'O') {
       const resultData = g.getMatrixData(resultMatrixName);
-      
+
       if (resultData) {
         const resultRows = resultData.length;
         const resultCols = resultData[0]?.length || 0;
-        
-        // Ensure O matches result dimensions
+
         const oExisting = g.matrices['O'];
         if (!oExisting || oExisting.length !== resultRows || (oExisting[0]?.length || 0) !== resultCols) {
           g.initMatrix('O', resultRows, resultCols);
         }
-        
+
         const oData = g.getMatrixData('O');
-        
+
         if (oData) {
           for (let i = 0; i < resultData.length; i++) {
             for (let j = 0; j < resultData[i].length; j++) {
               const resultElem = resultData[i][j];
               const oElem = oData[i][j];
-              
+
               if (resultElem && oElem) {
                 oElem.value = resultElem.value;
                 oElem.dependencies = [...resultElem.dependencies];
@@ -233,12 +234,132 @@ export function recomputeFormula() {
             }
           }
         }
-        
+
         rows.set(resultRows);
         cols.set(resultCols);
       }
     }
-    
+
+    return g;
+  });
+}
+
+function recomputeIterative(parsed) {
+  const iterations = Math.max(1, Number(get(iterationCount)) || 1);
+  const dims = get(matrixDimensions);
+
+  graph.update(g => {
+    g.clear();
+    g.intermediateCounter = 0;
+    g.intermediateDescriptions = {};
+
+    // Track max computed index per base name
+    const maxIndexByBase = new Map();
+
+    const explicitNames = Array.from(parsed.explicitVariables || []);
+    explicitNames.forEach(name => {
+      const match = name.match(/^([A-Z][a-z]*)_(\d+)$/);
+      if (match) {
+        const base = match[1];
+        const idx = Number(match[2]);
+        maxIndexByBase.set(base, Math.max(maxIndexByBase.get(base) || 0, idx));
+      }
+      const d = dims[name] || { rows: 5, cols: 5 };
+      g.initMatrix(name, d.rows, d.cols);
+    });
+
+    const ensureMatrix = (name, rows, cols) => {
+      const existing = g.matrices[name];
+      if (!existing || existing.length !== rows || (existing[0]?.length || 0) !== cols) {
+        g.initMatrix(name, rows, cols);
+      }
+    };
+
+    const copyMatrix = (src, dest, label) => {
+      const srcData = g.getMatrixData(src);
+      if (!srcData) return;
+      const rowsCount = srcData.length;
+      const colsCount = srcData[0]?.length || 0;
+      ensureMatrix(dest, rowsCount, colsCount);
+      const destData = g.getMatrixData(dest);
+      if (!destData) return;
+      for (let i = 0; i < rowsCount; i++) {
+        for (let j = 0; j < colsCount; j++) {
+          const s = srcData[i][j];
+          const d = destData[i][j];
+          if (s && d) {
+            d.value = s.value;
+            d.color = s.color;
+            d.isIdentity = s.isIdentity;
+            d.dependencies = [...s.dependencies];
+          }
+        }
+      }
+      if (label) {
+        g.intermediateDescriptions[dest] = label;
+      }
+    };
+
+    const resolveMatrixName = (token, nVal) => {
+      let desiredIndex = null;
+      if (token.subscriptType === 'number') {
+        desiredIndex = token.subscript;
+      } else if (token.subscript === 'n') {
+        desiredIndex = nVal;
+      } else if (token.subscript === 'n+1') {
+        desiredIndex = nVal + 1;
+      }
+
+      let availableMax = maxIndexByBase.get(token.baseName) || 0;
+      if (token.subscriptType === 'symbolic' && desiredIndex !== null && desiredIndex > availableMax) {
+        desiredIndex = availableMax;
+      }
+
+      if (desiredIndex === null || Number.isNaN(desiredIndex)) {
+        desiredIndex = availableMax;
+      }
+
+      return `${token.baseName}_${desiredIndex}`;
+    };
+
+    const instantiateAst = (ast, nVal) => {
+      if (!ast) return null;
+      if (ast.type === 'matrix') {
+        const resolvedName = resolveMatrixName(ast, nVal);
+        return { ...ast, name: resolvedName };
+      }
+      return {
+        type: 'multiply',
+        left: instantiateAst(ast.left, nVal),
+        right: instantiateAst(ast.right, nVal)
+      };
+    };
+
+    // Evaluate base cases (numeric targets)
+    parsed.baseCases?.forEach(def => {
+      const ast = instantiateAst(def.ast, 0);
+      const resultName = evaluateFormula(g, ast, []);
+      const targetIndex = def.target.subscript || 0;
+      const targetName = `${def.target.baseName}_${targetIndex}`;
+      copyMatrix(resultName, targetName, targetName);
+      maxIndexByBase.set(def.target.baseName, Math.max(maxIndexByBase.get(def.target.baseName) || 0, targetIndex));
+    });
+
+    // Recurrence evaluation
+    if (parsed.recurrence) {
+      const rec = parsed.recurrence;
+      const startIndex = maxIndexByBase.get(rec.target.baseName) || 0;
+      for (let step = 0; step < iterations; step++) {
+        const nVal = startIndex + step;
+        const ast = instantiateAst(rec.ast, nVal);
+        const resultName = evaluateFormula(g, ast, []);
+        const targetIndex = nVal + 1;
+        const targetName = `${rec.target.baseName}_${targetIndex}`;
+        copyMatrix(resultName, targetName, targetName);
+        maxIndexByBase.set(rec.target.baseName, Math.max(maxIndexByBase.get(rec.target.baseName) || 0, targetIndex));
+      }
+    }
+
     return g;
   });
 }
@@ -248,6 +369,11 @@ export function recomputeFormula() {
  */
 parsedFormula.subscribe(() => {
   // Trigger recomputation when formula changes
+  recomputeFormula();
+});
+
+// Recompute when iteration count changes
+iterationCount.subscribe(() => {
   recomputeFormula();
 });
 

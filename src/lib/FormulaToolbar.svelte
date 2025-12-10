@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { parseFormula } from './formulaParser';
-  import { currentFormula, parsedFormula } from './stores';
+  import { currentFormula, parsedFormula, iterationCount } from './stores';
 
   let lastParsedFormula = $currentFormula;
 
@@ -33,6 +33,15 @@
     on:input={(e) => handleInput(e.currentTarget.value)}
     placeholder="e.g., S*K*S or A*A^T"
     class:error={hasError}
+  />
+  <label for="iteration-count" class="iteration-label">Iterations:</label>
+  <input
+    id="iteration-count"
+    type="number"
+    min="1"
+    max="20"
+    bind:value={$iterationCount}
+    class="iteration-input"
   />
   <div class="formula-examples">
     <button class="example-btn" on:click={() => { currentFormula.set('S*K*S'); }}>S×K×S</button>
@@ -84,6 +93,29 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+  }
+
+  .iteration-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  .iteration-input {
+    width: 64px;
+    padding: 6px 8px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: border-color 0.2s;
+  }
+
+  .iteration-input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
   }
   
   .example-btn {
