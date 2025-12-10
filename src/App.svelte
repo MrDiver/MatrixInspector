@@ -15,7 +15,7 @@
   import ThemeMenu from './lib/ThemeMenu.svelte';
   import { symmetric, symmetricPattern, initializeFormulaMatrices, generateRandomMatrix, currentColor, fillDiagonal, transposeState, pythonMatrix, parsedFormula, matrixDimensions, clearPersistentSelections, persistentSelections, paintIdentityMode, currentFormula, graph } from './lib/stores';
   import { getBaseMatrices, getAllMatrixReferences } from './lib/formulaParser';
-  import { darkMode, selectedTheme, setTheme, themes } from './lib/themeStore';
+  import { selectedTheme, setTheme, themes } from './lib/themeStore';
   import './sw-registration.js';
     // Initialize formula matrices only when formula actually changes (avoid re-init on fullscreen toggle)
     let lastInitializedFormula = null;
