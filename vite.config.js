@@ -48,5 +48,16 @@ export default defineConfig({
     })
   ],
   // Use relative paths so the app works when served from a GitHub Pages subpath
-  base: './'
+  base: './',
+  build: {
+    // Debug build configuration
+    minify: false,
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        // Keep chunk size warnings but don't error
+        manualChunks: undefined
+      }
+    }
+  }
 })
